@@ -744,6 +744,7 @@ td input:focus { border-bottom-color: var(--accent); }
               <tr id="listTableHeader">
                 <th style="width:36px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" style="accent-color:var(--accent);cursor:pointer"></th>
                 <th class="sortable" onclick="sortInvoices('date')">거래일자 <span class="sort-icon" data-col="date"></span></th>
+                <th class="sortable" onclick="sortInvoices('createdAt')">저장시간 <span class="sort-icon" data-col="createdAt"></span></th>
                 <th class="sortable" onclick="sortInvoices('vendor')">업체명 <span class="sort-icon" data-col="vendor"></span></th>
                 <th>구분</th>
                 <th class="sortable" onclick="sortInvoices('items')">품목 수 <span class="sort-icon" data-col="items"></span></th>
@@ -1501,6 +1502,16 @@ async function loadInvoices() {
 
 let currentSort = { col: null, dir: 'desc' };
 
+function formatCreatedAt(ts) {
+  if (!ts || !ts.toDate) return '—';
+  const d = ts.toDate();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return mm + '-' + dd + ' ' + hh + ':' + mi;
+}
+
 function isAdminUser() {
   return currentUserData?.role === 'admin' || currentUser?.email === ADMIN_EMAIL;
 }
@@ -1508,7 +1519,7 @@ function isAdminUser() {
 function renderInvoiceList(list) {
   const tbody = document.getElementById('invoiceListBody');
   const admin = isAdminUser();
-  const cols = admin ? 9 : 8;
+  const cols = admin ? 10 : 9;
 
   // 관리자: 병원명 컬럼 + 검색란 표시
   const header = document.getElementById('listTableHeader');
@@ -1533,6 +1544,7 @@ function renderInvoiceList(list) {
     '<td onclick="event.stopPropagation()"><input type="checkbox" class="inv-check" value="' + inv.id + '" onchange="updateSelectionUI()" style="accent-color:var(--accent);cursor:pointer"></td>' +
     (admin ? '<td style="font-weight:500;font-size:11px">' + (inv.hospitalName || '—') + '</td>' : '') +
     '<td>' + (inv.date || '—') + '</td>' +
+    '<td style="font-size:11px;color:var(--text-muted)">' + formatCreatedAt(inv.createdAt) + '</td>' +
     '<td style="font-weight:500">' + (inv.vendor || '—') + '</td>' +
     '<td>' + (inv.type || '—') + '</td>' +
     '<td>' + (inv.items?.length || 0) + '개</td>' +
@@ -1565,7 +1577,10 @@ function sortInvoices(col) {
   const dir = currentSort.dir === 'asc' ? 1 : -1;
   const sorted = [...invoices].sort((a, b) => {
     let va, vb;
-    if (col === 'totalAmount') {
+    if (col === 'createdAt') {
+      va = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      vb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+    } else if (col === 'totalAmount') {
       va = parseFloat((a.totalAmount || '0').replace(/,/g, '')) || 0;
       vb = parseFloat((b.totalAmount || '0').replace(/,/g, '')) || 0;
     } else if (col === 'items') {
