@@ -702,7 +702,11 @@ td input:focus { border-bottom-color: var(--accent); }
             <div class="panel-title">명세서 목록</div>
             <div class="panel-sub">저장된 거래명세서를 조회하고 엑셀로 내보낼 수 있습니다</div>
           </div>
-          <button class="btn-secondary" onclick="exportAllExcel()">📥 전체 엑셀 추출</button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn-secondary" onclick="exportAllExcel()">📥 엑셀</button>
+            <button class="btn-secondary" id="btnDeleteSelected" onclick="deleteSelectedInvoices()" style="display:none;color:#f87171;border-color:rgba(239,68,68,0.3)">🗑 선택 삭제</button>
+            <button class="btn-secondary" id="btnPrintSelected" onclick="printSelectedInvoices()" style="display:none">🖨 출력</button>
+          </div>
         </div>
 
         <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
@@ -714,21 +718,23 @@ td input:focus { border-bottom-color: var(--accent); }
         </div>
         <div class="filter-bar">
           <input class="filter-input" id="filterVendor" placeholder="🔍 업체명 검색" oninput="filterInvoices()">
-          <input class="filter-input" type="date" id="filterFrom" onchange="filterInvoices()">
-          <input class="filter-input" type="date" id="filterTo" onchange="filterInvoices()">
-          <select class="filter-input" id="filterType" onchange="filterInvoices()">
+          <input class="filter-input" type="date" id="filterFrom">
+          <input class="filter-input" type="date" id="filterTo">
+          <select class="filter-input" id="filterType">
             <option value="">전체 구분</option>
             <option value="의약품">의약품</option>
             <option value="의료기기">의료기기</option>
           </select>
+          <button class="btn-primary" onclick="filterInvoices()" style="flex:none;padding:9px 20px;font-size:12px">검색</button>
         </div>
 
         <div class="invoice-table">
           <table>
             <thead>
               <tr>
+                <th style="width:36px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" style="accent-color:var(--accent);cursor:pointer"></th>
                 <th>거래일자</th><th>업체명</th><th>구분</th>
-                <th>품목 수</th><th>합계금액</th><th>상태</th><th>원본</th>
+                <th>품목 수</th><th>합계금액</th><th>상태</th><th>관리</th>
               </tr>
             </thead>
             <tbody id="invoiceListBody"></tbody>
@@ -1176,6 +1182,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   addItemRow();
   initAuth();
+
+  // ESC 키로 모달 닫기
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
+    }
+  });
 });
 
 function handleFile(file) {
@@ -1475,20 +1488,29 @@ async function loadInvoices() {
 function renderInvoiceList(list) {
   const tbody = document.getElementById('invoiceListBody');
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">저장된 명세서가 없습니다</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)">저장된 명세서가 없습니다</td></tr>';
+    document.getElementById('selectAll').checked = false;
+    updateSelectionUI();
     return;
   }
   tbody.innerHTML = list.map(inv =>
-    '<tr onclick="viewInvoice(\'' + inv.id + '\')">' +
+    '<tr>' +
+    '<td onclick="event.stopPropagation()"><input type="checkbox" class="inv-check" value="' + inv.id + '" onchange="updateSelectionUI()" style="accent-color:var(--accent);cursor:pointer"></td>' +
     '<td>' + (inv.date || '—') + '</td>' +
     '<td style="font-weight:500">' + (inv.vendor || '—') + '</td>' +
     '<td>' + (inv.type || '—') + '</td>' +
     '<td>' + (inv.items?.length || 0) + '개</td>' +
     '<td style="font-family:JetBrains Mono,monospace;color:var(--accent)">' + (inv.totalAmount ? inv.totalAmount + '원' : '—') + '</td>' +
     '<td><span class="status-chip ' + (inv.status === 'confirmed' ? 'status-confirmed' : 'status-pending') + '">' + (inv.status === 'confirmed' ? '확정' : '검수중') + '</span></td>' +
-    '<td>' + (inv.imageUrl ? '<button class="btn-sm" onclick="event.stopPropagation();viewImage(\'' + inv.imageUrl + '\')">원본</button>' : '—') + '</td>' +
+    '<td style="white-space:nowrap">' +
+      '<button class="btn-sm" onclick="event.stopPropagation();editInvoice(\'' + inv.id + '\')" style="margin-right:4px">수정</button>' +
+      '<button class="btn-sm" onclick="event.stopPropagation();deleteSingleInvoice(\'' + inv.id + '\')" style="color:#f87171;border-color:rgba(239,68,68,0.3)">삭제</button>' +
+      (inv.imageUrl ? ' <button class="btn-sm" onclick="event.stopPropagation();viewImage(\'' + inv.imageUrl + '\')">원본</button>' : '') +
+    '</td>' +
     '</tr>'
   ).join('');
+  document.getElementById('selectAll').checked = false;
+  updateSelectionUI();
 }
 
 function setDateFilter(type, btn) {
@@ -1749,6 +1771,148 @@ async function loadAdminUsers() {
 
 function exportAdminExcel() {
   exportAllExcel();
+}
+
+// ─── 선택/삭제/수정/출력 ─────────────────────────────────
+function toggleSelectAll(el) {
+  document.querySelectorAll('.inv-check').forEach(cb => cb.checked = el.checked);
+  updateSelectionUI();
+}
+
+function updateSelectionUI() {
+  const checked = document.querySelectorAll('.inv-check:checked').length;
+  document.getElementById('btnDeleteSelected').style.display = checked ? 'inline-flex' : 'none';
+  document.getElementById('btnPrintSelected').style.display = checked ? 'inline-flex' : 'none';
+}
+
+function getSelectedIds() {
+  return [...document.querySelectorAll('.inv-check:checked')].map(cb => cb.value);
+}
+
+async function deleteSelectedInvoices() {
+  const ids = getSelectedIds();
+  if (!ids.length) return;
+  if (!confirm(ids.length + '건의 명세서를 삭제하시겠습니까?')) return;
+  const fb = window._firebase;
+  try {
+    await Promise.all(ids.map(id => fb.deleteDoc(fb.doc(fb.db, 'invoices', id))));
+    showToast(ids.length + '건 삭제 완료', 'success');
+    loadInvoices();
+  } catch(e) { showToast('삭제 실패: ' + e.message, 'error'); }
+}
+
+async function deleteSingleInvoice(id) {
+  if (!confirm('이 명세서를 삭제하시겠습니까?')) return;
+  const fb = window._firebase;
+  try {
+    await fb.deleteDoc(fb.doc(fb.db, 'invoices', id));
+    showToast('삭제 완료', 'success');
+    loadInvoices();
+  } catch(e) { showToast('삭제 실패: ' + e.message, 'error'); }
+}
+
+function editInvoice(id) {
+  const inv = invoices.find(i => i.id === id);
+  if (!inv) return;
+  // 스캔 패널로 이동 후 폼에 데이터 채우기
+  showPanel('scan', document.querySelector('.nav-btn'));
+  document.getElementById('formEmpty').style.display = 'none';
+  document.getElementById('formContent').style.display = 'block';
+  document.getElementById('bottomBar').style.display = 'flex';
+
+  const s = (elId, v) => { const el = document.getElementById(elId); if (el) el.value = v || ''; };
+  s('f-date', inv.date); s('f-docno', inv.docNo); s('f-vendor', inv.vendor);
+  s('f-bizno', inv.bizNo); s('f-contact', inv.contact); s('f-type', inv.type);
+  s('f-payment', inv.payment); s('f-dept', inv.dept); s('f-receiver', inv.receiver);
+  s('f-supply', inv.supplyAmount); s('f-vat', inv.vat); s('f-total', inv.totalAmount);
+  if (inv.totalAmount) document.getElementById('totalDisplay').textContent = inv.totalAmount + '원';
+
+  document.getElementById('itemsBody').innerHTML = '';
+  if (inv.items && inv.items.length) inv.items.forEach(item => addItemRow(item));
+  else addItemRow();
+
+  if (inv.imageUrl) {
+    document.getElementById('previewImg').src = inv.imageUrl;
+    document.getElementById('previewImg').style.display = 'block';
+  }
+
+  // 수정 모드 표시: 저장 버튼을 업데이트로 변경
+  window._editingInvoiceId = id;
+  const saveBtn = document.querySelector('#bottomBar .btn-primary');
+  if (saveBtn) { saveBtn.textContent = '💾 수정 저장'; saveBtn.onclick = () => updateInvoice(id); }
+}
+
+async function updateInvoice(id) {
+  const fb = window._firebase;
+  try {
+    const items = [];
+    document.getElementById('itemsBody').querySelectorAll('tr').forEach(tr => {
+      const inputs = tr.querySelectorAll('input');
+      if (inputs[1]?.value) {
+        items.push({
+          code: inputs[0].value, name: inputs[1].value, spec: inputs[2].value,
+          unit: inputs[3].value, qty: inputs[4].value, unitPrice: inputs[5].value,
+          unitPriceVat: inputs[6].value, amount: inputs[7].value, manufacturer: inputs[8].value
+        });
+      }
+    });
+
+    await fb.setDoc(fb.doc(fb.db, 'invoices', id), {
+      date: document.getElementById('f-date').value,
+      docNo: document.getElementById('f-docno').value,
+      vendor: document.getElementById('f-vendor').value,
+      bizNo: document.getElementById('f-bizno').value,
+      contact: document.getElementById('f-contact').value,
+      dept: document.getElementById('f-dept').value,
+      type: document.getElementById('f-type').value,
+      payment: document.getElementById('f-payment').value,
+      receiver: document.getElementById('f-receiver').value,
+      supplyAmount: document.getElementById('f-supply').value,
+      vat: document.getElementById('f-vat').value,
+      totalAmount: document.getElementById('f-total').value,
+      items
+    }, { merge: true });
+
+    showToast('수정 완료', 'success');
+    window._editingInvoiceId = null;
+    const saveBtn = document.querySelector('#bottomBar .btn-primary');
+    if (saveBtn) { saveBtn.textContent = '💾 저장'; saveBtn.onclick = saveInvoice; }
+    clearScan();
+  } catch(e) { showToast('수정 실패: ' + e.message, 'error'); }
+}
+
+function printSelectedInvoices() {
+  const ids = getSelectedIds();
+  if (!ids.length) { showToast('출력할 명세서를 선택하세요', 'error'); return; }
+  const selected = invoices.filter(inv => ids.includes(inv.id));
+
+  const printHtml = selected.map(inv => {
+    const itemRows = (inv.items || []).map((item, i) =>
+      '<tr><td>' + (i+1) + '</td><td>' + (item.code||'') + '</td><td>' + (item.name||'') + '</td><td>' + (item.spec||'') + '</td><td>' + (item.unit||'') + '</td><td>' + (item.qty||'') + '</td><td>' + (item.unitPrice||'') + '</td><td>' + (item.unitPriceVat||'') + '</td><td>' + (item.amount||'') + '</td><td>' + (item.manufacturer||'') + '</td></tr>'
+    ).join('');
+    return '<div class="print-page">' +
+      '<h2>거래명세서</h2>' +
+      '<table><tr><td><b>거래일자:</b> ' + (inv.date||'') + '</td><td><b>명세서번호:</b> ' + (inv.docNo||'') + '</td></tr>' +
+      '<tr><td><b>공급업체:</b> ' + (inv.vendor||'') + '</td><td><b>사업자번호:</b> ' + (inv.bizNo||'') + '</td></tr>' +
+      '<tr><td><b>담당자:</b> ' + (inv.contact||'') + '</td><td><b>구분:</b> ' + (inv.type||'') + '</td></tr></table>' +
+      '<table class="items"><thead><tr><th>#</th><th>보험코드</th><th>품명</th><th>규격</th><th>단위</th><th>수량</th><th>단가</th><th>단가(VAT)</th><th>금액</th><th>제조사</th></tr></thead><tbody>' + itemRows + '</tbody></table>' +
+      '<div class="totals"><b>공급가액:</b> ' + (inv.supplyAmount||'0') + '  <b>세액:</b> ' + (inv.vat||'0') + '  <b>합계:</b> ' + (inv.totalAmount||'0') + '원</div>' +
+      '</div>';
+  }).join('<div style="page-break-after:always"></div>');
+
+  const win = window.open('', '_blank');
+  win.document.write('<!DOCTYPE html><html><head><title>명세서 출력</title><style>' +
+    'body{font-family:sans-serif;padding:20px;color:#333}' +
+    'h2{margin-bottom:12px;font-size:18px}' +
+    'table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12px}' +
+    'td,th{padding:6px 8px;border:1px solid #ddd;text-align:left}' +
+    'th{background:#f5f5f5;font-weight:600}' +
+    '.totals{text-align:right;font-size:14px;margin-top:12px;padding:12px;background:#f9f9f9;border-radius:6px}' +
+    '.print-page{margin-bottom:24px}' +
+    '@media print{body{padding:0}.print-page{margin:0}}' +
+    '</style></head><body>' + printHtml + '</body></html>');
+  win.document.close();
+  win.print();
 }
 
 // ─── UTILS ────────────────────────────────────────────────
