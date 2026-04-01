@@ -474,20 +474,34 @@ td input:focus { border-bottom-color: var(--accent); }
       <div class="auth-title">회원가입</div>
       <div class="auth-sub">병원 정보를 입력해주세요</div>
       <div class="form-group">
-        <label>병원명</label>
+        <label>병원명 <span style="color:var(--accent)">*</span></label>
         <input type="text" id="regHospital" placeholder="○○병원">
       </div>
       <div class="form-group">
-        <label>담당자명</label>
+        <label>부서 <span style="color:var(--accent)">*</span></label>
+        <input type="text" id="regDept" placeholder="구매과">
+      </div>
+      <div class="form-group">
+        <label>담당자명 <span style="color:var(--accent)">*</span></label>
         <input type="text" id="regName" placeholder="홍길동">
       </div>
       <div class="form-group">
-        <label>이메일</label>
-        <input type="email" id="regEmail" placeholder="hospital@example.com">
+        <label>핸드폰 번호 <span style="color:var(--accent)">*</span></label>
+        <input type="tel" id="regPhone" placeholder="010-0000-0000" oninput="formatPhone(this)">
       </div>
       <div class="form-group">
-        <label>비밀번호</label>
+        <label>이메일 <span style="color:var(--accent)">*</span></label>
+        <input type="email" id="regEmail" placeholder="hospital@example.com" onblur="checkEmailDuplicate()">
+        <span id="emailCheckResult" style="font-size:11px;margin-top:4px;display:block"></span>
+      </div>
+      <div class="form-group">
+        <label>비밀번호 <span style="color:var(--accent)">*</span></label>
         <input type="password" id="regPassword" placeholder="8자 이상">
+      </div>
+      <div class="form-group">
+        <label>비밀번호 확인 <span style="color:var(--accent)">*</span></label>
+        <input type="password" id="regPasswordConfirm" placeholder="비밀번호 재입력">
+        <span id="pwMatchResult" style="font-size:11px;margin-top:4px;display:block"></span>
       </div>
       <button class="btn btn-accent" onclick="register()">가입하기</button>
       <button class="btn btn-outline" onclick="showLogin()">로그인으로 돌아가기</button>
@@ -1003,19 +1017,65 @@ async function login() {
 async function register() {
   const fb = await waitFirebase();
   const hospital = document.getElementById('regHospital').value.trim();
+  const dept = document.getElementById('regDept').value.trim();
   const name = document.getElementById('regName').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
   const email = document.getElementById('regEmail').value.trim();
   const pw = document.getElementById('regPassword').value;
-  if (!hospital || !name || !email || !pw) { showToast('모든 항목을 입력하세요', 'error'); return; }
+  const pwConfirm = document.getElementById('regPasswordConfirm').value;
+
+  if (!hospital || !dept || !name || !phone || !email || !pw) {
+    showToast('모든 항목을 입력하세요', 'error'); return;
+  }
+  if (pw.length < 8) { showToast('비밀번호는 8자 이상이어야 합니다', 'error'); return; }
+  if (pw !== pwConfirm) { showToast('비밀번호가 일치하지 않습니다', 'error'); return; }
+
+  // 이메일 중복 확인
+  try {
+    const q = fb.query(fb.collection(fb.db, 'users'), fb.where('email', '==', email));
+    const snap = await fb.getDocs(q);
+    if (!snap.empty) { showToast('이미 가입된 이메일입니다', 'error'); return; }
+  } catch(e) {}
+
   try {
     const cred = await fb.createUserWithEmailAndPassword(fb.auth, email, pw);
     await fb.setDoc(fb.doc(fb.db, 'users', cred.user.uid), {
-      hospitalName: hospital, name, email, role: 'hospital', createdAt: fb.serverTimestamp()
+      hospitalName: hospital, dept, name, phone, email, role: 'hospital', createdAt: fb.serverTimestamp()
     });
     showToast('가입 완료! 환영합니다', 'success');
   } catch(e) {
-    showToast('가입 실패: ' + e.message, 'error');
+    if (e.code === 'auth/email-already-in-use') {
+      showToast('이미 가입된 이메일입니다', 'error');
+    } else {
+      showToast('가입 실패: ' + e.message, 'error');
+    }
   }
+}
+
+function formatPhone(el) {
+  let v = el.value.replace(/[^0-9]/g, '');
+  if (v.length > 3 && v.length <= 7) v = v.slice(0,3) + '-' + v.slice(3);
+  else if (v.length > 7) v = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7,11);
+  el.value = v;
+}
+
+async function checkEmailDuplicate() {
+  const email = document.getElementById('regEmail').value.trim();
+  const result = document.getElementById('emailCheckResult');
+  if (!email || !email.includes('@')) { result.textContent = ''; return; }
+
+  const fb = await waitFirebase();
+  try {
+    const q = fb.query(fb.collection(fb.db, 'users'), fb.where('email', '==', email));
+    const snap = await fb.getDocs(q);
+    if (snap.empty) {
+      result.textContent = '사용 가능한 이메일입니다';
+      result.style.color = 'var(--success)';
+    } else {
+      result.textContent = '이미 가입된 이메일입니다';
+      result.style.color = '#f87171';
+    }
+  } catch(e) { result.textContent = ''; }
 }
 
 async function logout() {
