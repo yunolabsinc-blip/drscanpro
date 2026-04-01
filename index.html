@@ -588,18 +588,6 @@ td input:focus { border-bottom-color: var(--accent); }
               <button class="btn-secondary" onclick="clearScan()">초기화</button>
             </div>
 
-            <!-- API KEY 설정 -->
-            <div class="form-card">
-              <div class="form-card-header">🔑 Anthropic API 키</div>
-              <div style="padding:12px 16px">
-                <input type="password" class="field-input" id="apiKeyInput" placeholder="sk-ant-..." style="border-bottom:1px solid var(--border); padding-bottom:6px">
-                <div style="margin-top:8px; display:flex; align-items:center; gap:8px">
-                  <button class="btn-secondary" style="font-size:11px;padding:5px 10px" onclick="saveApiKey()">저장</button>
-                  <button class="btn-secondary" style="font-size:11px;padding:5px 10px" onclick="testApiKey()">키 테스트</button>
-                  <span id="apiKeyStatus" style="font-size:11px;color:var(--text-muted)"></span>
-                </div>
-              </div>
-            </div>
           </div>
 
           <!-- RIGHT: 데이터 입력 -->
@@ -1130,9 +1118,6 @@ async function initAuth() {
         document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'flex');
       }
 
-      // API 키를 Firestore에서 로드 (모든 기기 동기화)
-      await loadApiKeyFromFirestore();
-
       if (templateMapping) document.getElementById('mappingSaved').style.display = 'block';
 
       // 내 정보 패널 업데이트
@@ -1147,93 +1132,6 @@ async function initAuth() {
       document.getElementById('mainApp').style.display = 'none';
     }
   });
-}
-
-// ─── API KEY Firestore 저장/로드 ─────────────────────────
-async function loadApiKeyFromFirestore() {
-  const fb = window._firebase;
-  try {
-    const snap = await fb.getDoc(fb.doc(fb.db, 'users', currentUser.uid));
-    if (snap.exists() && snap.data().apiKey) {
-      const key = snap.data().apiKey;
-      document.getElementById('apiKeyInput').value = key;
-      localStorage.setItem('drscanpro_apikey', key);
-      document.getElementById('apiKeyStatus').textContent = '(클라우드에서 불러옴)';
-    } else {
-      // localStorage에서 마이그레이션
-      const localKey = localStorage.getItem('drscanpro_apikey');
-      if (localKey) {
-        document.getElementById('apiKeyInput').value = localKey;
-        // Firestore에도 저장
-        await fb.setDoc(fb.doc(fb.db, 'users', currentUser.uid), { apiKey: localKey }, { merge: true });
-        document.getElementById('apiKeyStatus').textContent = '(클라우드에 동기화됨)';
-      }
-    }
-  } catch(e) {
-    // Firestore 실패 시 localStorage 폴백
-    const localKey = localStorage.getItem('drscanpro_apikey');
-    if (localKey) document.getElementById('apiKeyInput').value = localKey;
-  }
-}
-
-async function saveApiKey() {
-  const key = document.getElementById('apiKeyInput').value.trim();
-  if (!key) return;
-
-  // localStorage에 저장 (폴백)
-  localStorage.setItem('drscanpro_apikey', key);
-
-  // Firestore에 저장 (모든 기기 동기화)
-  if (currentUser) {
-    const fb = window._firebase;
-    try {
-      await fb.setDoc(fb.doc(fb.db, 'users', currentUser.uid), { apiKey: key }, { merge: true });
-      document.getElementById('apiKeyStatus').textContent = '(모든 기기에 적용됨)';
-      showToast('API 키 저장 완료 (모든 기기 동기화)', 'success');
-    } catch(e) {
-      showToast('API 키 로컬 저장 완료', 'success');
-    }
-  } else {
-    showToast('API 키 저장 완료', 'success');
-  }
-}
-
-async function testApiKey() {
-  const key = document.getElementById('apiKeyInput').value.trim();
-  const status = document.getElementById('apiKeyStatus');
-  if (!key) { showToast('API 키를 입력하세요', 'error'); return; }
-
-  status.textContent = '테스트 중...';
-  status.style.color = 'var(--accent2)';
-
-  try {
-    // 서버 프록시를 통한 테스트
-    const res = await fetch('/api/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        imageBase64: null,
-        imageType: null,
-        apiKey: key,
-        testOnly: true
-      })
-    });
-    const data = await res.json();
-
-    if (res.ok || data.testResult === 'ok') {
-      status.textContent = 'API 키 유효함';
-      status.style.color = 'var(--success)';
-      showToast('API 키가 정상 작동합니다', 'success');
-    } else {
-      status.textContent = '실패: ' + (data.error || '알 수 없는 오류');
-      status.style.color = '#f87171';
-      showToast('키 테스트 실패: ' + (data.error || ''), 'error');
-    }
-  } catch(e) {
-    status.textContent = '네트워크 오류';
-    status.style.color = '#f87171';
-    showToast('테스트 실패: ' + e.message, 'error');
-  }
 }
 
 // ─── NAVIGATION ───────────────────────────────────────────
@@ -1373,7 +1271,6 @@ function compressImage(file, maxSize, quality) {
 
 // ─── ANALYZE (Vercel 프록시 사용 → CORS 해결) ───────────
 async function analyze() {
-  const apiKey = localStorage.getItem('drscanpro_apikey') || '';
   if (!currentImageBase64) return;
 
   setStatus('processing', '거래명세서 분석 중...');
@@ -1385,8 +1282,7 @@ async function analyze() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         imageBase64: currentImageBase64,
-        imageType: currentImageType,
-        apiKey: apiKey
+        imageType: currentImageType
       })
     });
 
