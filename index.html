@@ -196,6 +196,7 @@ header {
   font-size: 13px; cursor: pointer; transition: all 0.2s;
 }
 .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.admin-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(232,98,60,0.08); }
 
 /* ── STATUS ── */
 .status-bar {
@@ -646,8 +647,8 @@ td input:focus { border-bottom-color: var(--accent); }
                   <table>
                     <thead>
                       <tr>
-                        <th>#</th><th>품목명</th><th>규격</th><th>단위</th>
-                        <th>수량</th><th>단가</th><th>공급가액</th><th>비고</th>
+                        <th>#</th><th>보험코드</th><th>품명</th><th>규격</th><th>단위</th>
+                        <th>수량</th><th>단가</th><th>단가(VAT)</th><th>금액</th><th>제조사</th>
                       </tr>
                     </thead>
                     <tbody id="itemsBody"></tbody>
@@ -830,16 +831,40 @@ td input:focus { border-bottom-color: var(--accent); }
           </div>
         </div>
 
-        <div class="invoice-table">
-          <table>
-            <thead>
-              <tr>
-                <th>병원명</th><th>거래일자</th><th>업체명</th>
-                <th>구분</th><th>품목 수</th><th>합계금액</th><th>원본</th>
-              </tr>
-            </thead>
-            <tbody id="adminListBody"></tbody>
-          </table>
+        <!-- 관리자 탭 -->
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button class="btn-secondary admin-tab active" onclick="switchAdminTab('invoices',this)" style="font-size:12px;padding:8px 16px">📋 명세서 목록</button>
+          <button class="btn-secondary admin-tab" onclick="switchAdminTab('users',this)" style="font-size:12px;padding:8px 16px">👥 사용자 목록</button>
+        </div>
+
+        <!-- 명세서 목록 -->
+        <div id="adminInvoicesTab">
+          <div class="invoice-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>병원명</th><th>거래일자</th><th>업체명</th>
+                  <th>구분</th><th>품목 수</th><th>합계금액</th><th>원본</th>
+                </tr>
+              </thead>
+              <tbody id="adminListBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 사용자 목록 -->
+        <div id="adminUsersTab" style="display:none">
+          <div class="invoice-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>병원명</th><th>담당자명</th><th>이메일</th>
+                  <th>가입일</th><th>명세서 수</th><th>최근 거래업체</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -1310,29 +1335,35 @@ function addItemRow(item) {
   const tr = document.createElement('tr');
   tr.innerHTML =
     '<td style="color:var(--text-muted);font-size:11px">' + n + '</td>' +
-    '<td><input value="' + esc(item.name) + '" placeholder="품목명" style="min-width:120px"></td>' +
+    '<td><input value="' + esc(item.code) + '" placeholder="보험코드" style="width:90px"></td>' +
+    '<td><input value="' + esc(item.name) + '" placeholder="품명" style="min-width:120px"></td>' +
     '<td><input value="' + esc(item.spec) + '" placeholder="규격" style="width:80px"></td>' +
     '<td><input value="' + esc(item.unit) + '" placeholder="단위" style="width:50px"></td>' +
     '<td><input value="' + esc(item.qty) + '" placeholder="0" style="width:50px" oninput="recalcRow(this)"></td>' +
-    '<td><input value="' + esc(item.unitPrice ? Number(item.unitPrice).toLocaleString() : '') + '" placeholder="0" style="width:80px" oninput="recalcRow(this)"></td>' +
-    '<td><input value="' + esc(item.amount ? Number(item.amount).toLocaleString() : '') + '" placeholder="0" style="width:90px"></td>' +
-    '<td><input value="' + esc(item.note) + '" placeholder="—" style="width:60px"></td>';
+    '<td><input value="' + esc(item.unitPrice ? Number(item.unitPrice).toLocaleString() : '') + '" placeholder="단가" style="width:80px" oninput="recalcRow(this)"></td>' +
+    '<td><input value="' + esc(item.unitPriceVat ? Number(item.unitPriceVat).toLocaleString() : '') + '" placeholder="VAT포함" style="width:80px"></td>' +
+    '<td><input value="' + esc(item.amount ? Number(item.amount).toLocaleString() : '') + '" placeholder="금액" style="width:90px"></td>' +
+    '<td><input value="' + esc(item.manufacturer) + '" placeholder="제조사" style="width:80px"></td>';
   tbody.appendChild(tr);
 }
 
 function recalcRow(input) {
   const tr = input.closest('tr');
   const inputs = tr.querySelectorAll('input');
-  const qty = parseFloat(inputs[3].value.replace(/,/g,'')) || 0;
-  const price = parseFloat(inputs[4].value.replace(/,/g,'')) || 0;
-  if (qty && price) inputs[5].value = (qty * price).toLocaleString();
+  // inputs: 0=code, 1=name, 2=spec, 3=unit, 4=qty, 5=unitPrice, 6=unitPriceVat, 7=amount, 8=manufacturer
+  const qty = parseFloat(inputs[4].value.replace(/,/g,'')) || 0;
+  const price = parseFloat(inputs[5].value.replace(/,/g,'')) || 0;
+  if (qty && price) {
+    inputs[7].value = (qty * price).toLocaleString();
+    inputs[6].value = Math.round(price * 1.1).toLocaleString();
+  }
   recalcTotals();
 }
 
 function recalcTotals() {
   let total = 0;
   document.getElementById('itemsBody').querySelectorAll('tr').forEach(tr => {
-    total += parseFloat(tr.querySelectorAll('input')[5]?.value.replace(/,/g,'')) || 0;
+    total += parseFloat(tr.querySelectorAll('input')[7]?.value.replace(/,/g,'')) || 0;
   });
   const vat = Math.round(total * 0.1);
   document.getElementById('f-supply').value = total.toLocaleString();
@@ -1359,11 +1390,11 @@ async function saveInvoice() {
     const items = [];
     document.getElementById('itemsBody').querySelectorAll('tr').forEach(tr => {
       const inputs = tr.querySelectorAll('input');
-      if (inputs[0]?.value) {
+      if (inputs[1]?.value) {
         items.push({
-          name: inputs[0].value, spec: inputs[1].value, unit: inputs[2].value,
-          qty: inputs[3].value, unitPrice: inputs[4].value,
-          amount: inputs[5].value, note: inputs[6].value
+          code: inputs[0].value, name: inputs[1].value, spec: inputs[2].value,
+          unit: inputs[3].value, qty: inputs[4].value, unitPrice: inputs[5].value,
+          unitPriceVat: inputs[6].value, amount: inputs[7].value, manufacturer: inputs[8].value
         });
       }
     });
@@ -1458,7 +1489,7 @@ function exportExcel() {
   const items = [];
   document.getElementById('itemsBody').querySelectorAll('tr').forEach((tr, i) => {
     const inputs = tr.querySelectorAll('input');
-    items.push([i+1, inputs[0]?.value, inputs[1]?.value, inputs[2]?.value, inputs[3]?.value, inputs[4]?.value, inputs[5]?.value, inputs[6]?.value]);
+    items.push([i+1, inputs[0]?.value, inputs[1]?.value, inputs[2]?.value, inputs[3]?.value, inputs[4]?.value, inputs[5]?.value, inputs[6]?.value, inputs[7]?.value, inputs[8]?.value]);
   });
 
   if (templateMapping) {
@@ -1469,7 +1500,7 @@ function exportExcel() {
     const row = [document.getElementById('f-date').value, document.getElementById('f-docno').value, document.getElementById('f-vendor').value, document.getElementById('f-bizno').value, document.getElementById('f-contact').value, document.getElementById('f-dept').value, document.getElementById('f-type').value, document.getElementById('f-payment').value, document.getElementById('f-supply').value, document.getElementById('f-vat').value, document.getElementById('f-total').value];
     const ws1 = XLSX.utils.aoa_to_sheet([...header, row]);
     XLSX.utils.book_append_sheet(wb, ws1, '기본정보');
-    const itemHeader = [['#','품목명','규격','단위','수량','단가','공급가액','비고']];
+    const itemHeader = [['#','보험코드','품명','규격','단위','수량','단가','단가(VAT)','금액','제조사']];
     const ws2 = XLSX.utils.aoa_to_sheet([...itemHeader, ...items]);
     XLSX.utils.book_append_sheet(wb, ws2, '품목내역');
     XLSX.writeFile(wb, (document.getElementById('f-vendor').value || '명세서') + '_' + (document.getElementById('f-date').value || 'date') + '.xlsx');
@@ -1584,6 +1615,14 @@ function resetTemplate() {
 }
 
 // ─── ADMIN ────────────────────────────────────────────────
+function switchAdminTab(tab, btn) {
+  document.getElementById('adminInvoicesTab').style.display = tab === 'invoices' ? 'block' : 'none';
+  document.getElementById('adminUsersTab').style.display = tab === 'users' ? 'block' : 'none';
+  document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (tab === 'users') loadAdminUsers();
+}
+
 async function loadAdminData() {
   const fb = window._firebase;
   try {
@@ -1614,6 +1653,46 @@ async function loadAdminData() {
       '<td>' + (inv.imageUrl ? '<button class="btn-sm" onclick="viewImage(\'' + inv.imageUrl + '\')">원본</button>' : '—') + '</td>' +
       '</tr>'
     ).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function loadAdminUsers() {
+  const fb = window._firebase;
+  try {
+    // 사용자 목록
+    const usersSnap = await fb.getDocs(fb.collection(fb.db, 'users'));
+    const users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // 명세서 전체 (사용자별 통계용)
+    const invSnap = await fb.getDocs(fb.collection(fb.db, 'invoices'));
+    const allInvoices = invSnap.docs.map(d => d.data());
+
+    // 사용자별 통계 집계
+    const userStats = {};
+    allInvoices.forEach(inv => {
+      const uid = inv.hospitalId;
+      if (!userStats[uid]) userStats[uid] = { count: 0, vendors: new Set() };
+      userStats[uid].count++;
+      if (inv.vendor) userStats[uid].vendors.add(inv.vendor);
+    });
+
+    document.getElementById('adminUsersBody').innerHTML = users.map(u => {
+      const stats = userStats[u.id] || { count: 0, vendors: new Set() };
+      const vendors = [...(stats.vendors || [])].slice(0, 3).join(', ') || '—';
+      const createdAt = u.createdAt?.toDate ? u.createdAt.toDate().toISOString().slice(0,10) : '—';
+      return '<tr>' +
+        '<td style="font-weight:500">' + (u.hospitalName || '—') + '</td>' +
+        '<td>' + (u.name || '—') + '</td>' +
+        '<td style="font-size:11px">' + (u.email || '—') + '</td>' +
+        '<td>' + createdAt + '</td>' +
+        '<td>' + stats.count + '건</td>' +
+        '<td style="font-size:11px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + vendors + '</td>' +
+        '</tr>';
+    }).join('');
+
+    if (!users.length) {
+      document.getElementById('adminUsersBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)">등록된 사용자가 없습니다</td></tr>';
+    }
   } catch(e) { console.error(e); }
 }
 

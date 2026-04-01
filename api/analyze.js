@@ -33,7 +33,7 @@ export default async function handler(req, res) {
             },
             {
               type: 'text',
-              text: '거래명세서에서 모든 정보를 추출하여 아래 JSON 형식으로만 응답하세요. JSON 외 텍스트 없이:\n{"date":"YYYY-MM-DD","docNo":"","vendor":"","bizNo":"","contact":"","type":"의약품 또는 의료기기","paymentTerms":"","items":[{"name":"","spec":"","unit":"","qty":0,"unitPrice":0,"amount":0,"note":""}],"supplyAmount":0,"vat":0,"totalAmount":0,"confidence":{"date":0.9,"docNo":0.8,"vendor":0.95,"bizNo":0.7,"contact":0.6,"items":0.85,"supplyAmount":0.9,"totalAmount":0.9}}'
+              text: '거래명세서에서 모든 정보를 추출하여 아래 JSON 형식으로만 응답하세요. JSON 외 텍스트 없이:\n{"date":"YYYY-MM-DD","docNo":"","vendor":"","bizNo":"","contact":"","type":"의약품 또는 의료기기","paymentTerms":"","items":[{"code":"보험코드/제품코드","name":"품명","spec":"규격","unit":"단위","qty":0,"unitPrice":0,"unitPriceVat":0,"amount":0,"manufacturer":"제조사"}],"supplyAmount":0,"vat":0,"totalAmount":0,"confidence":{"date":0.9,"docNo":0.8,"vendor":0.95,"bizNo":0.7,"contact":0.6,"items":0.85,"supplyAmount":0.9,"totalAmount":0.9}}'
             }
           ]
         }]
