@@ -1451,17 +1451,24 @@ async function loadInvoices() {
   const fb = window._firebase;
   try {
     const isAdmin = currentUserData?.role === 'admin' || currentUser.email === ADMIN_EMAIL;
-    let q;
+    let snap;
     if (isAdmin) {
-      q = fb.query(fb.collection(fb.db, 'invoices'), fb.orderBy('createdAt', 'desc'));
+      snap = await fb.getDocs(fb.collection(fb.db, 'invoices'));
     } else {
-      q = fb.query(fb.collection(fb.db, 'invoices'), fb.where('hospitalId', '==', currentUser.uid), fb.orderBy('createdAt', 'desc'));
+      const q = fb.query(fb.collection(fb.db, 'invoices'), fb.where('hospitalId', '==', currentUser.uid));
+      snap = await fb.getDocs(q);
     }
-    const snap = await fb.getDocs(q);
     invoices = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // createdAt 기준 내림차순 정렬 (클라이언트)
+    invoices.sort((a, b) => {
+      const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return tb - ta;
+    });
     renderInvoiceList(invoices);
   } catch(e) {
-    console.error(e);
+    console.error('loadInvoices error:', e);
+    showToast('목록 로드 실패: ' + e.message, 'error');
   }
 }
 
