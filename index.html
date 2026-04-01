@@ -437,11 +437,11 @@ td input:focus { border-bottom-color: var(--accent); }
       <div class="auth-sub">병원 구매과 담당자 전용 서비스</div>
       <div class="form-group">
         <label>이메일</label>
-        <input type="email" id="loginEmail" placeholder="hospital@example.com">
+        <input type="email" id="loginEmail" placeholder="hospital@example.com" onkeydown="if(event.key==='Enter')document.getElementById('loginPassword').focus()">
       </div>
       <div class="form-group">
         <label>비밀번호</label>
-        <input type="password" id="loginPassword" placeholder="••••••••">
+        <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
       </div>
       <div class="checkbox-group">
         <input type="checkbox" id="rememberEmail">
