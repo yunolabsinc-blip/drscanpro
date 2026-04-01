@@ -8,16 +8,17 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { imageBase64, imageType, apiKey } = req.body;
-    if (!imageBase64 || !apiKey) {
-      return res.status(400).json({ error: '필수 파라미터가 없습니다' });
+    const { imageBase64, imageType, apiKey } = req.body || {};
+    const trimmedKey = (apiKey || '').trim();
+    if (!imageBase64 || !trimmedKey) {
+      return res.status(400).json({ error: '필수 파라미터가 없습니다 (이미지: ' + !!imageBase64 + ', 키: ' + !!trimmedKey + ')' });
     }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
+        'x-api-key': trimmedKey,
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
@@ -41,7 +42,10 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      return res.status(response.status).json({ error: err.error?.message || 'API 오류' });
+      const msg = err.error?.message || 'API 오류';
+      return res.status(response.status).json({
+        error: response.status === 401 ? 'API 키가 유효하지 않습니다. 키를 확인해주세요. (' + msg + ')' : msg
+      });
     }
 
     const data = await response.json();
