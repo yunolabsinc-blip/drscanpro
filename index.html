@@ -198,7 +198,7 @@ header {
   font-size: 13px; cursor: pointer; transition: all 0.2s;
 }
 .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
-.admin-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(232,98,60,0.08); }
+.admin-tab.active, .date-quick.active { border-color: var(--accent); color: var(--accent); background: rgba(232,98,60,0.08); }
 
 /* ── STATUS ── */
 .status-bar {
@@ -705,6 +705,13 @@ td input:focus { border-bottom-color: var(--accent); }
           <button class="btn-secondary" onclick="exportAllExcel()">📥 전체 엑셀 추출</button>
         </div>
 
+        <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+          <button class="btn-secondary date-quick" onclick="setDateFilter('today',this)" style="font-size:11px;padding:6px 12px">당일</button>
+          <button class="btn-secondary date-quick" onclick="setDateFilter('week',this)" style="font-size:11px;padding:6px 12px">이번 주</button>
+          <button class="btn-secondary date-quick" onclick="setDateFilter('lastweek',this)" style="font-size:11px;padding:6px 12px">지난 주</button>
+          <button class="btn-secondary date-quick" onclick="setDateFilter('month',this)" style="font-size:11px;padding:6px 12px">당월</button>
+          <button class="btn-secondary date-quick" onclick="setDateFilter('all',this)" style="font-size:11px;padding:6px 12px">전체</button>
+        </div>
         <div class="filter-bar">
           <input class="filter-input" id="filterVendor" placeholder="🔍 업체명 검색" oninput="filterInvoices()">
           <input class="filter-input" type="date" id="filterFrom" onchange="filterInvoices()">
@@ -1475,6 +1482,35 @@ function renderInvoiceList(list) {
     '<td>' + (inv.imageUrl ? '<button class="btn-sm" onclick="event.stopPropagation();viewImage(\'' + inv.imageUrl + '\')">원본</button>' : '—') + '</td>' +
     '</tr>'
   ).join('');
+}
+
+function setDateFilter(type, btn) {
+  const now = new Date();
+  const fmt = d => d.toISOString().slice(0, 10);
+  let from = '', to = '';
+
+  if (type === 'today') {
+    from = to = fmt(now);
+  } else if (type === 'week') {
+    const day = now.getDay() || 7;
+    const mon = new Date(now); mon.setDate(now.getDate() - day + 1);
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    from = fmt(mon); to = fmt(sun);
+  } else if (type === 'lastweek') {
+    const day = now.getDay() || 7;
+    const mon = new Date(now); mon.setDate(now.getDate() - day - 6);
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    from = fmt(mon); to = fmt(sun);
+  } else if (type === 'month') {
+    from = fmt(new Date(now.getFullYear(), now.getMonth(), 1));
+    to = fmt(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+  }
+
+  document.getElementById('filterFrom').value = from;
+  document.getElementById('filterTo').value = to;
+  document.querySelectorAll('.date-quick').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  filterInvoices();
 }
 
 function filterInvoices() {
