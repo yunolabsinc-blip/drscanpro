@@ -10,11 +10,11 @@
 <!-- Firebase -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-  import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, doc, setDoc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-  
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, deleteUser, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, doc, setDoc, getDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-  // ─── FIREBASE CONFIG (환경변수로 교체) ───────────────────
+
+  // ─── FIREBASE CONFIG ───────────────────
   const firebaseConfig = {
     apiKey: "AIzaSyB_9Jgm1_wLE8MOoxgTzZBHf6K4iRKx7bM",
     authDomain: "drscanpro.firebaseapp.com",
@@ -28,9 +28,9 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
-  
 
-  window._firebase = { auth, db, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, collection, addDoc, getDocs, query, where, orderBy, doc, setDoc, getDoc, serverTimestamp};
+
+  window._firebase = { auth, db, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, deleteUser, setPersistence, browserLocalPersistence, browserSessionPersistence, collection, addDoc, getDocs, query, where, orderBy, doc, setDoc, getDoc, deleteDoc, serverTimestamp };
 </script>
 
 <style>
@@ -72,7 +72,9 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
 .auth-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
 .form-group { margin-bottom: 16px; }
 .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
-.form-group input {
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group input[type="text"] {
   width: 100%; padding: 11px 14px;
   background: var(--surface2); border: 1px solid var(--border);
   border-radius: 8px; color: var(--text);
@@ -80,6 +82,12 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
   transition: border-color 0.2s;
 }
 .form-group input:focus { border-color: var(--accent); }
+.checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.checkbox-group input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+.checkbox-group label { font-size: 12px; color: var(--text-muted); cursor: pointer; margin-bottom: 0; }
+.auth-links { display: flex; justify-content: center; gap: 16px; margin-top: 16px; }
+.auth-links a { font-size: 12px; color: var(--text-muted); cursor: pointer; text-decoration: none; transition: color 0.2s; }
+.auth-links a:hover { color: var(--accent); }
 .btn {
   width: 100%; padding: 12px; border: none; border-radius: 8px;
   font-family: inherit; font-size: 14px; font-weight: 600;
@@ -89,6 +97,8 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
 .btn-accent:hover { background: #d4562f; }
 .btn-outline { background: transparent; color: var(--text-muted); border: 1px solid var(--border); margin-top: 10px; }
 .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.btn-danger { background: transparent; color: #f87171; border: 1px solid rgba(239,68,68,0.3); margin-top: 10px; }
+.btn-danger:hover { background: rgba(239,68,68,0.1); border-color: #f87171; }
 .auth-switch { text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-muted); }
 .auth-switch a { color: var(--accent); cursor: pointer; text-decoration: none; }
 
@@ -125,7 +135,7 @@ header {
 .sidebar {
   width: 56px; background: var(--surface); border-right: 1px solid var(--border);
   display: flex; flex-direction: column; align-items: center;
-  padding: 12px 0; gap: 4px;
+  padding: 12px 0; gap: 4px; flex-shrink: 0;
 }
 .nav-btn {
   width: 40px; height: 40px; border-radius: 10px;
@@ -147,7 +157,7 @@ header {
 .content { flex: 1; overflow-y: auto; }
 
 /* ── PANELS ── */
-.panel { display: none; padding: 24px; }
+.panel { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; width: 100%; }
 .panel.active { display: block; }
 .panel-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -302,6 +312,12 @@ td input:focus { border-bottom-color: var(--accent); }
   font-family: inherit; font-size: 12px; outline: none; width: 100%;
 }
 
+/* ── SETTINGS PANEL ── */
+.settings-section { margin-bottom: 24px; }
+.settings-section-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.settings-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.settings-card p { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
+
 /* ── ADMIN PANEL ── */
 .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
 .stat-card {
@@ -330,7 +346,7 @@ td input:focus { border-bottom-color: var(--accent); }
 .empty-state .icon { font-size: 40px; opacity: 0.4; }
 
 /* ── MODAL ── */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 100; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
 .modal-overlay.show { display: flex; }
 .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 500px; max-width: calc(100vw - 40px); max-height: 80vh; overflow-y: auto; }
 .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
@@ -338,10 +354,56 @@ td input:focus { border-bottom-color: var(--accent); }
 .modal-btn { padding: 9px 18px; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; border: none; }
 .modal-btn-primary { background: var(--accent); color: #fff; }
 .modal-btn-secondary { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+.modal-btn-danger { background: #ef4444; color: #fff; }
 
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width: 768px) {
+  .auth-card { padding: 24px 20px; }
+
+  header { padding: 10px 14px; gap: 8px; }
+  .logo-text { font-size: 14px; }
+  .user-badge { font-size: 10px; padding: 3px 8px; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .main-layout { flex-direction: column; height: auto; min-height: calc(100vh - 55px); }
+
+  .sidebar {
+    width: 100%; flex-direction: row; justify-content: center;
+    border-right: none; border-bottom: 1px solid var(--border);
+    padding: 6px 0; gap: 2px; order: -1;
+  }
+  .nav-btn { width: 44px; height: 38px; font-size: 16px; }
+  .nav-btn .tooltip { display: none; }
+
+  .content { height: auto; overflow-y: visible; }
+  .panel { padding: 16px; }
+
+  .scan-layout { grid-template-columns: 1fr; gap: 14px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-field { border-right: none !important; }
+
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stat-card { padding: 14px; }
+  .stat-value { font-size: 22px; }
+
+  .filter-bar { flex-direction: column; gap: 8px; }
+  .filter-input { width: 100%; }
+
+  .bottom-bar { padding: 10px 14px; flex-wrap: wrap; }
+  .total-display { width: 100%; text-align: right; margin-left: 0; margin-top: 8px; }
+
+  .panel-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+
+  .mapping-row { grid-template-columns: 1fr; gap: 6px; }
+  .mapping-arrow { display: none; }
+
+  .invoice-table { overflow-x: auto; }
+
+  .modal { padding: 20px; }
+}
 </style>
 </head>
 <body>
@@ -366,8 +428,20 @@ td input:focus { border-bottom-color: var(--accent); }
         <label>비밀번호</label>
         <input type="password" id="loginPassword" placeholder="••••••••">
       </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="rememberEmail">
+        <label for="rememberEmail">아이디 저장</label>
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" id="autoLogin">
+        <label for="autoLogin">자동 로그인</label>
+      </div>
       <button class="btn btn-accent" onclick="login()">로그인</button>
       <button class="btn btn-outline" onclick="showRegister()">회원가입</button>
+      <div class="auth-links">
+        <a onclick="showFindEmail()">이메일 찾기</a>
+        <a onclick="showResetPassword()">비밀번호 찾기</a>
+      </div>
       <div class="auth-switch">관리자 <a onclick="showAdmin()">관리자 로그인</a></div>
     </div>
 
@@ -392,6 +466,35 @@ td input:focus { border-bottom-color: var(--accent); }
         <input type="password" id="regPassword" placeholder="8자 이상">
       </div>
       <button class="btn btn-accent" onclick="register()">가입하기</button>
+      <button class="btn btn-outline" onclick="showLogin()">로그인으로 돌아가기</button>
+    </div>
+
+    <!-- FIND EMAIL -->
+    <div id="findEmailForm" style="display:none">
+      <div class="auth-title">이메일 찾기</div>
+      <div class="auth-sub">가입 시 입력한 병원명과 담당자명을 입력하세요</div>
+      <div class="form-group">
+        <label>병원명</label>
+        <input type="text" id="findHospital" placeholder="○○병원">
+      </div>
+      <div class="form-group">
+        <label>담당자명</label>
+        <input type="text" id="findName" placeholder="홍길동">
+      </div>
+      <div id="findEmailResult" style="display:none; padding:12px; background:var(--surface2); border-radius:8px; margin-bottom:16px; font-size:13px;"></div>
+      <button class="btn btn-accent" onclick="findEmail()">이메일 찾기</button>
+      <button class="btn btn-outline" onclick="showLogin()">로그인으로 돌아가기</button>
+    </div>
+
+    <!-- RESET PASSWORD -->
+    <div id="resetPasswordForm" style="display:none">
+      <div class="auth-title">비밀번호 찾기</div>
+      <div class="auth-sub">가입한 이메일로 비밀번호 재설정 링크를 보내드립니다</div>
+      <div class="form-group">
+        <label>이메일</label>
+        <input type="email" id="resetEmail" placeholder="hospital@example.com">
+      </div>
+      <button class="btn btn-accent" onclick="resetPassword()">재설정 메일 발송</button>
       <button class="btn btn-outline" onclick="showLogin()">로그인으로 돌아가기</button>
     </div>
   </div>
@@ -419,6 +522,9 @@ td input:focus { border-bottom-color: var(--accent); }
       </button>
       <button class="nav-btn" onclick="showPanel('template', this)">
         📐<span class="tooltip">양식 설정</span>
+      </button>
+      <button class="nav-btn" onclick="showPanel('settings', this)">
+        👤<span class="tooltip">내 정보</span>
       </button>
       <button class="nav-btn admin-only" onclick="showPanel('admin', this)" style="display:none">
         ⚙️<span class="tooltip">관리자</span>
@@ -465,8 +571,9 @@ td input:focus { border-bottom-color: var(--accent); }
               <div class="form-card-header">🔑 Anthropic API 키</div>
               <div style="padding:12px 16px">
                 <input type="password" class="field-input" id="apiKeyInput" placeholder="sk-ant-..." style="border-bottom:1px solid var(--border); padding-bottom:6px">
-                <div style="margin-top:8px">
+                <div style="margin-top:8px; display:flex; align-items:center; gap:8px">
                   <button class="btn-secondary" style="font-size:11px;padding:5px 10px" onclick="saveApiKey()">저장</button>
+                  <span id="apiKeyStatus" style="font-size:11px;color:var(--text-muted)"></span>
                 </div>
               </div>
             </div>
@@ -650,6 +757,44 @@ td input:focus { border-bottom-color: var(--accent); }
         </div>
       </div>
 
+      <!-- ── SETTINGS PANEL ── -->
+      <div class="panel" id="panelSettings">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">내 정보</div>
+            <div class="panel-sub">계정 정보 확인 및 관리</div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">👤 계정 정보</div>
+          <div class="settings-card">
+            <div class="form-grid" style="border:none">
+              <div class="form-field">
+                <div class="field-label">병원명</div>
+                <div id="settingsHospital" style="font-size:14px;font-weight:500;padding:4px 0">—</div>
+              </div>
+              <div class="form-field">
+                <div class="field-label">담당자명</div>
+                <div id="settingsName" style="font-size:14px;font-weight:500;padding:4px 0">—</div>
+              </div>
+              <div class="form-field full">
+                <div class="field-label">이메일</div>
+                <div id="settingsEmail" style="font-size:14px;font-weight:500;padding:4px 0">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">⚠️ 위험 구역</div>
+          <div class="settings-card" style="border-color:rgba(239,68,68,0.3)">
+            <p>회원 탈퇴 시 모든 데이터(명세서, 계정 정보)가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.</p>
+            <button class="btn btn-danger" style="width:auto;padding:10px 24px" onclick="showDeleteAccountModal()">회원 탈퇴</button>
+          </div>
+        </div>
+      </div>
+
       <!-- ── ADMIN PANEL ── -->
       <div class="panel" id="panelAdmin">
         <div class="panel-header">
@@ -714,6 +859,24 @@ td input:focus { border-bottom-color: var(--accent); }
   </div>
 </div>
 
+<!-- DELETE ACCOUNT MODAL -->
+<div class="modal-overlay" id="deleteAccountModal">
+  <div class="modal">
+    <div class="modal-title">⚠️ 회원 탈퇴</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+      정말로 탈퇴하시겠습니까?<br>모든 명세서 데이터와 계정 정보가 영구적으로 삭제됩니다.
+    </p>
+    <div class="form-group">
+      <label>확인을 위해 비밀번호를 입력하세요</label>
+      <input type="password" id="deleteConfirmPassword" placeholder="비밀번호">
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-secondary" onclick="closeModal('deleteAccountModal')">취소</button>
+      <button class="modal-btn modal-btn-danger" onclick="deleteAccount()">탈퇴하기</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ─── STATE ────────────────────────────────────────────────
 let currentUser = null;
@@ -740,7 +903,27 @@ async function login() {
   const email = document.getElementById('loginEmail').value.trim();
   const pw = document.getElementById('loginPassword').value;
   if (!email || !pw) { showToast('이메일과 비밀번호를 입력하세요', 'error'); return; }
+
+  // 아이디 저장
+  if (document.getElementById('rememberEmail').checked) {
+    localStorage.setItem('drscanpro_savedEmail', email);
+    localStorage.setItem('drscanpro_rememberEmail', 'true');
+  } else {
+    localStorage.removeItem('drscanpro_savedEmail');
+    localStorage.removeItem('drscanpro_rememberEmail');
+  }
+
+  // 자동 로그인 설정
+  const autoLogin = document.getElementById('autoLogin').checked;
+  localStorage.setItem('drscanpro_autoLogin', autoLogin ? 'true' : 'false');
+
   try {
+    // 세션 유지 방식 설정
+    if (autoLogin) {
+      await fb.setPersistence(fb.auth, fb.browserLocalPersistence);
+    } else {
+      await fb.setPersistence(fb.auth, fb.browserSessionPersistence);
+    }
     await fb.signInWithEmailAndPassword(fb.auth, email, pw);
   } catch(e) {
     showToast('로그인 실패: ' + (e.code === 'auth/invalid-credential' ? '이메일 또는 비밀번호 오류' : e.message), 'error');
@@ -759,7 +942,7 @@ async function register() {
     await fb.setDoc(fb.doc(fb.db, 'users', cred.user.uid), {
       hospitalName: hospital, name, email, role: 'hospital', createdAt: fb.serverTimestamp()
     });
-    showToast('가입 완료! 환영합니다 🎉', 'success');
+    showToast('가입 완료! 환영합니다', 'success');
   } catch(e) {
     showToast('가입 실패: ' + e.message, 'error');
   }
@@ -770,9 +953,115 @@ async function logout() {
   await fb.signOut(fb.auth);
 }
 
+// ─── 이메일 찾기 ─────────────────────────────────────────
+async function findEmail() {
+  const fb = await waitFirebase();
+  const hospital = document.getElementById('findHospital').value.trim();
+  const name = document.getElementById('findName').value.trim();
+  if (!hospital || !name) { showToast('병원명과 담당자명을 입력하세요', 'error'); return; }
+
+  try {
+    const q = fb.query(fb.collection(fb.db, 'users'), fb.where('hospitalName', '==', hospital), fb.where('name', '==', name));
+    const snap = await fb.getDocs(q);
+    const resultDiv = document.getElementById('findEmailResult');
+    resultDiv.style.display = 'block';
+
+    if (snap.empty) {
+      resultDiv.innerHTML = '<span style="color:#f87171">일치하는 계정을 찾을 수 없습니다.</span>';
+    } else {
+      const emails = snap.docs.map(d => {
+        const email = d.data().email;
+        // 이메일 일부 마스킹
+        const [local, domain] = email.split('@');
+        const masked = local.substring(0, 2) + '***@' + domain;
+        return masked;
+      });
+      resultDiv.innerHTML = '<span style="color:var(--success)">가입된 이메일: ' + emails.join(', ') + '</span>';
+    }
+  } catch(e) {
+    showToast('조회 실패: ' + e.message, 'error');
+  }
+}
+
+// ─── 비밀번호 찾기 ───────────────────────────────────────
+async function resetPassword() {
+  const fb = await waitFirebase();
+  const email = document.getElementById('resetEmail').value.trim();
+  if (!email) { showToast('이메일을 입력하세요', 'error'); return; }
+
+  try {
+    await fb.sendPasswordResetEmail(fb.auth, email);
+    showToast('비밀번호 재설정 메일을 발송했습니다. 메일함을 확인하세요.', 'success');
+    setTimeout(() => showLogin(), 2000);
+  } catch(e) {
+    if (e.code === 'auth/user-not-found') {
+      showToast('등록되지 않은 이메일입니다', 'error');
+    } else {
+      showToast('발송 실패: ' + e.message, 'error');
+    }
+  }
+}
+
+// ─── 회원 탈퇴 ───────────────────────────────────────────
+function showDeleteAccountModal() {
+  document.getElementById('deleteConfirmPassword').value = '';
+  document.getElementById('deleteAccountModal').classList.add('show');
+}
+
+async function deleteAccount() {
+  const fb = await waitFirebase();
+  const pw = document.getElementById('deleteConfirmPassword').value;
+  if (!pw) { showToast('비밀번호를 입력하세요', 'error'); return; }
+
+  try {
+    // 재인증
+    const email = currentUser.email;
+    await fb.signInWithEmailAndPassword(fb.auth, email, pw);
+
+    // 1. 사용자의 명세서 삭제
+    const q = fb.query(fb.collection(fb.db, 'invoices'), fb.where('hospitalId', '==', currentUser.uid));
+    const snap = await fb.getDocs(q);
+    const deletePromises = snap.docs.map(d => fb.deleteDoc(fb.doc(fb.db, 'invoices', d.id)));
+    await Promise.all(deletePromises);
+
+    // 2. 사용자 문서 삭제
+    await fb.deleteDoc(fb.doc(fb.db, 'users', currentUser.uid));
+
+    // 3. Firebase Auth 사용자 삭제
+    await fb.deleteUser(currentUser);
+
+    // 4. 로컬 데이터 정리
+    localStorage.removeItem('drscanpro_apikey');
+    localStorage.removeItem('drscanpro_mapping');
+    localStorage.removeItem('drscanpro_autoLogin');
+
+    closeModal('deleteAccountModal');
+    showToast('회원 탈퇴가 완료되었습니다', 'info');
+  } catch(e) {
+    if (e.code === 'auth/invalid-credential') {
+      showToast('비밀번호가 올바르지 않습니다', 'error');
+    } else {
+      showToast('탈퇴 실패: ' + e.message, 'error');
+    }
+  }
+}
+
 // ─── AUTH STATE ───────────────────────────────────────────
 async function initAuth() {
   const fb = await waitFirebase();
+
+  // 아이디 저장 복원
+  if (localStorage.getItem('drscanpro_rememberEmail') === 'true') {
+    const savedEmail = localStorage.getItem('drscanpro_savedEmail');
+    if (savedEmail) document.getElementById('loginEmail').value = savedEmail;
+    document.getElementById('rememberEmail').checked = true;
+  }
+
+  // 자동 로그인 체크박스 복원
+  if (localStorage.getItem('drscanpro_autoLogin') === 'true') {
+    document.getElementById('autoLogin').checked = true;
+  }
+
   fb.onAuthStateChanged(fb.auth, async user => {
     if (user) {
       currentUser = user;
@@ -787,9 +1076,15 @@ async function initAuth() {
         document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'flex');
       }
 
-      const savedKey = localStorage.getItem('drscanpro_apikey');
-      if (savedKey) document.getElementById('apiKeyInput').value = savedKey;
+      // API 키를 Firestore에서 로드 (모든 기기 동기화)
+      await loadApiKeyFromFirestore();
+
       if (templateMapping) document.getElementById('mappingSaved').style.display = 'block';
+
+      // 내 정보 패널 업데이트
+      document.getElementById('settingsHospital').textContent = currentUserData.hospitalName || '—';
+      document.getElementById('settingsName').textContent = currentUserData.name || '—';
+      document.getElementById('settingsEmail').textContent = user.email || '—';
 
       loadInvoices();
     } else {
@@ -800,18 +1095,76 @@ async function initAuth() {
   });
 }
 
+// ─── API KEY Firestore 저장/로드 ─────────────────────────
+async function loadApiKeyFromFirestore() {
+  const fb = window._firebase;
+  try {
+    const snap = await fb.getDoc(fb.doc(fb.db, 'users', currentUser.uid));
+    if (snap.exists() && snap.data().apiKey) {
+      const key = snap.data().apiKey;
+      document.getElementById('apiKeyInput').value = key;
+      localStorage.setItem('drscanpro_apikey', key);
+      document.getElementById('apiKeyStatus').textContent = '(클라우드에서 불러옴)';
+    } else {
+      // localStorage에서 마이그레이션
+      const localKey = localStorage.getItem('drscanpro_apikey');
+      if (localKey) {
+        document.getElementById('apiKeyInput').value = localKey;
+        // Firestore에도 저장
+        await fb.setDoc(fb.doc(fb.db, 'users', currentUser.uid), { apiKey: localKey }, { merge: true });
+        document.getElementById('apiKeyStatus').textContent = '(클라우드에 동기화됨)';
+      }
+    }
+  } catch(e) {
+    // Firestore 실패 시 localStorage 폴백
+    const localKey = localStorage.getItem('drscanpro_apikey');
+    if (localKey) document.getElementById('apiKeyInput').value = localKey;
+  }
+}
+
+async function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) return;
+
+  // localStorage에 저장 (폴백)
+  localStorage.setItem('drscanpro_apikey', key);
+
+  // Firestore에 저장 (모든 기기 동기화)
+  if (currentUser) {
+    const fb = window._firebase;
+    try {
+      await fb.setDoc(fb.doc(fb.db, 'users', currentUser.uid), { apiKey: key }, { merge: true });
+      document.getElementById('apiKeyStatus').textContent = '(모든 기기에 적용됨)';
+      showToast('API 키 저장 완료 (모든 기기 동기화)', 'success');
+    } catch(e) {
+      showToast('API 키 로컬 저장 완료', 'success');
+    }
+  } else {
+    showToast('API 키 저장 완료', 'success');
+  }
+}
+
 // ─── NAVIGATION ───────────────────────────────────────────
 function showPanel(name, btn) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('panel' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+  const panelId = 'panel' + name.charAt(0).toUpperCase() + name.slice(1);
+  const panel = document.getElementById(panelId);
+  if (panel) panel.classList.add('active');
   if (btn) btn.classList.add('active');
   if (name === 'list') loadInvoices();
   if (name === 'admin') loadAdminData();
 }
 
-function showRegister() { document.getElementById('loginForm').style.display='none'; document.getElementById('registerForm').style.display='block'; }
-function showLogin() { document.getElementById('registerForm').style.display='none'; document.getElementById('loginForm').style.display='block'; }
+function showRegister() { hideAllAuthForms(); document.getElementById('registerForm').style.display='block'; }
+function showLogin() { hideAllAuthForms(); document.getElementById('loginForm').style.display='block'; }
+function showFindEmail() { hideAllAuthForms(); document.getElementById('findEmailForm').style.display='block'; }
+function showResetPassword() { hideAllAuthForms(); document.getElementById('resetPasswordForm').style.display='block'; }
+function hideAllAuthForms() {
+  ['loginForm','registerForm','findEmailForm','resetPasswordForm'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+}
 function showAdmin() { document.getElementById('loginEmail').value = ADMIN_EMAIL; document.getElementById('loginPassword').focus(); }
 
 // ─── FILE UPLOAD ──────────────────────────────────────────
@@ -842,7 +1195,7 @@ function handleFile(file) {
   reader.readAsDataURL(file);
 }
 
-// ─── ANALYZE ─────────────────────────────────────────────
+// ─── ANALYZE (Vercel 프록시 사용 → CORS 해결) ───────────
 async function analyze() {
   const apiKey = localStorage.getItem('drscanpro_apikey');
   if (!apiKey) { showToast('API 키를 먼저 설정하세요', 'error'); return; }
@@ -852,37 +1205,30 @@ async function analyze() {
   document.getElementById('analyzeBtn').disabled = true;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/analyze', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-opus-4-5',
-        max_tokens: 2000,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: currentImageType, data: currentImageBase64 } },
-            { type: 'text', text: '거래명세서에서 모든 정보를 추출하여 아래 JSON 형식으로만 응답하세요. JSON 외 텍스트 없이:\n{"date":"YYYY-MM-DD","docNo":"","vendor":"","bizNo":"","contact":"","type":"의약품 또는 의료기기","paymentTerms":"","items":[{"name":"","spec":"","unit":"","qty":0,"unitPrice":0,"amount":0,"note":""}],"supplyAmount":0,"vat":0,"totalAmount":0,"confidence":{"date":0.9,"docNo":0.8,"vendor":0.95,"bizNo":0.7,"contact":0.6,"items":0.85,"supplyAmount":0.9,"totalAmount":0.9}}' }
-          ]
-        }]
+        imageBase64: currentImageBase64,
+        imageType: currentImageType,
+        apiKey: apiKey
       })
     });
 
-    if (!res.ok) throw new Error((await res.json()).error?.message || 'API 오류');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'API 오류');
+    }
     const data = await res.json();
-    const match = data.content[0].text.match(/\{[\s\S]*\}/);
+    const text = data.content[0].text;
+    const match = text.match(/\{[\s\S]*\}/);
     if (!match) throw new Error('파싱 실패');
     fillForm(JSON.parse(match[0]));
     setStatus('success', '분석 완료! 내용을 확인하고 저장하세요');
     document.getElementById('formEmpty').style.display = 'none';
     document.getElementById('formContent').style.display = 'block';
     document.getElementById('bottomBar').style.display = 'flex';
-    showToast('분석 완료 ✓', 'success');
+    showToast('분석 완료', 'success');
   } catch(e) {
     setStatus('error', '오류: ' + e.message);
     showToast('분석 실패: ' + e.message, 'error');
@@ -967,13 +1313,11 @@ async function saveInvoice() {
   setStatus('processing', '저장 중...');
 
   try {
-    // 이미지 base64로 Firestore에 직접 저장
     let imageUrl = null;
     if (currentImageBase64) {
       imageUrl = 'data:' + currentImageType + ';base64,' + currentImageBase64;
     }
 
-    // 품목 수집
     const items = [];
     document.getElementById('itemsBody').querySelectorAll('tr').forEach(tr => {
       const inputs = tr.querySelectorAll('input');
@@ -1009,7 +1353,7 @@ async function saveInvoice() {
 
     await fb.addDoc(fb.collection(fb.db, 'invoices'), invoice);
     setStatus('success', '저장 완료!');
-    showToast('저장되었습니다 ✓', 'success');
+    showToast('저장되었습니다', 'success');
     clearScan();
   } catch(e) {
     setStatus('error', '저장 실패: ' + e.message);
@@ -1170,7 +1514,6 @@ function renderMappingUI(headers) {
       '</div>';
   }).join('');
 
-  // 자동 매핑 시도
   headers.forEach(col => {
     const sel = table.querySelector('[data-col="' + col + '"]');
     if (!sel) return;
@@ -1190,7 +1533,7 @@ function saveMapping() {
   localStorage.setItem('drscanpro_mapping', JSON.stringify(mapping));
   document.getElementById('mappingArea').style.display = 'none';
   document.getElementById('mappingSaved').style.display = 'block';
-  showToast('양식 매핑 저장 완료 ✓', 'success');
+  showToast('양식 매핑 저장 완료', 'success');
 }
 
 function resetTemplate() {
@@ -1265,13 +1608,6 @@ function clearScan() {
   document.getElementById('itemsBody').innerHTML = '';
   addItemRow();
   setStatus('');
-}
-
-function saveApiKey() {
-  const key = document.getElementById('apiKeyInput').value.trim();
-  if (!key) return;
-  localStorage.setItem('drscanpro_apikey', key);
-  showToast('API 키 저장 완료', 'success');
 }
 
 function setStatus(type, text) {
