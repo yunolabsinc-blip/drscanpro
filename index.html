@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>닥터스캔Pro — 병원 구매과 거래명세서 자동화</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, doc, setDoc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  
+
+  // ─── FIREBASE CONFIG (환경변수로 교체) ───────────────────
+  const firebaseConfig = {
+    apiKey: "AIzaSyB_9Jgm1_wLE8MOoxgTzZBHf6K4iRKx7bM",
+    authDomain: "drscanpro.firebaseapp.com",
+    projectId: "drscanpro",
+    storageBucket: "drscanpro.firebasestorage.app",
+    messagingSenderId: "510994357928",
+    appId: "1:510994357928:web:44ac73fc5122677ab72c9d",
+    measurementId: "G-X3FP84GP1R"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  
+
+  window._firebase = { auth, db, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, collection, addDoc, getDocs, query, where, orderBy, doc, setDoc, getDoc, serverTimestamp};
+</script>
+
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #21253a;
+  --border: #2e3348;
+  --accent: #e8623c;
+  --accent2: #4f8ef7;
+  --success: #34d399;
+  --warn: #fbbf24;
+  --text: #e8eaf0;
+  --text-muted: #7c839e;
+  --radius: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* ── AUTH SCREEN ── */
+.auth-screen {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 20px;
+}
+.auth-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 40px; width: 100%; max-width: 400px;
+}
+.auth-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+.auth-logo-icon {
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.auth-logo-text { font-size: 22px; font-weight: 700; }
+.auth-logo-text span { color: var(--accent); }
+.auth-title { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+.auth-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
+.form-group input {
+  width: 100%; padding: 11px 14px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: inherit; font-size: 14px; outline: none;
+  transition: border-color 0.2s;
+}
+.form-group input:focus { border-color: var(--accent); }
+.btn {
+  width: 100%; padding: 12px; border: none; border-radius: 8px;
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-accent:hover { background: #d4562f; }
+.btn-outline { background: transparent; color: var(--text-muted); border: 1px solid var(--border); margin-top: 10px; }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.auth-switch { text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-muted); }
+.auth-switch a { color: var(--accent); cursor: pointer; text-decoration: none; }
+
+/* ── MAIN APP ── */
+.app { display: none; flex-direction: column; min-height: 100vh; }
+header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 24px; border-bottom: 1px solid var(--border);
+  background: var(--surface); position: sticky; top: 0; z-index: 10;
+}
+.logo-icon {
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.logo-text { font-size: 17px; font-weight: 700; }
+.logo-text span { color: var(--accent); }
+.header-user { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.user-badge {
+  padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;
+  background: rgba(232,98,60,0.15); color: var(--accent);
+  border: 1px solid rgba(232,98,60,0.3);
+}
+.btn-sm {
+  padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px;
+  background: transparent; color: var(--text-muted); font-size: 12px;
+  cursor: pointer; font-family: inherit; transition: all 0.2s;
+}
+.btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── LAYOUT ── */
+.main-layout { display: flex; flex: 1; height: calc(100vh - 61px); }
+.sidebar {
+  width: 56px; background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center;
+  padding: 12px 0; gap: 4px;
+}
+.nav-btn {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; cursor: pointer; transition: all 0.2s;
+  border: none; background: transparent;
+  position: relative;
+}
+.nav-btn:hover { background: var(--surface2); }
+.nav-btn.active { background: rgba(232,98,60,0.15); }
+.nav-btn .tooltip {
+  position: absolute; left: 52px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 4px 8px; font-size: 11px; white-space: nowrap;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  font-family: 'Noto Sans KR', sans-serif; color: var(--text);
+}
+.nav-btn:hover .tooltip { opacity: 1; }
+.content { flex: 1; overflow-y: auto; }
+
+/* ── PANELS ── */
+.panel { display: none; padding: 24px; }
+.panel.active { display: block; }
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.panel-title { font-size: 18px; font-weight: 700; }
+.panel-sub { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+/* ── SCAN PANEL ── */
+.scan-layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
+.upload-zone {
+  border: 2px dashed var(--border); border-radius: var(--radius);
+  padding: 32px 20px; text-align: center; cursor: pointer;
+  transition: all 0.2s; background: rgba(255,255,255,0.02);
+  position: relative; margin-bottom: 14px;
+}
+.upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(232,98,60,0.05); }
+.upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.upload-icon { font-size: 36px; margin-bottom: 10px; }
+.upload-main { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.upload-sub { font-size: 12px; color: var(--text-muted); }
+.preview-img { width: 100%; border-radius: 8px; border: 1px solid var(--border); display: none; margin-bottom: 14px; }
+.action-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.btn-primary {
+  flex: 1; padding: 11px; border: none; border-radius: 8px;
+  background: var(--accent); color: #fff; font-family: inherit;
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn-primary:hover { background: #d4562f; }
+.btn-primary:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; }
+.btn-secondary {
+  padding: 11px 16px; border: 1px solid var(--border); border-radius: 8px;
+  background: transparent; color: var(--text-muted); font-family: inherit;
+  font-size: 13px; cursor: pointer; transition: all 0.2s;
+}
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── STATUS ── */
+.status-bar {
+  padding: 10px 14px; border-radius: 8px; font-size: 12px;
+  display: none; align-items: center; gap: 8px; margin-bottom: 14px;
+}
+.status-bar.processing { display: flex; background: rgba(79,142,247,0.1); border: 1px solid rgba(79,142,247,0.3); color: var(--accent2); }
+.status-bar.success { display: flex; background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3); color: var(--success); }
+.status-bar.error { display: flex; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #f87171; }
+.spinner { width: 14px; height: 14px; border: 2px solid rgba(79,142,247,0.3); border-top-color: var(--accent2); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── FORM ── */
+.form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; }
+.form-card-header {
+  padding: 11px 16px; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.8px; text-transform: uppercase; color: var(--text-muted);
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; }
+.form-field {
+  padding: 11px 16px; border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+.form-field:nth-child(2n) { border-right: none; }
+.form-field.full { grid-column: 1 / -1; border-right: none; }
+.field-label { font-size: 10px; font-weight: 500; color: var(--text-muted); margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between; }
+.field-input {
+  width: 100%; background: transparent; border: none;
+  border-bottom: 1px solid transparent; color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif; font-size: 13px;
+  padding: 2px 0; transition: border-color 0.2s; outline: none;
+}
+.field-input:focus { border-bottom-color: var(--accent); }
+.conf-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+.conf-high { background: rgba(52,211,153,0.15); color: var(--success); }
+.conf-mid { background: rgba(251,191,36,0.15); color: var(--warn); }
+.conf-low { background: rgba(239,68,68,0.15); color: #f87171; }
+
+/* ── TABLE ── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th {
+  padding: 9px 12px; text-align: left; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted);
+  background: var(--surface2); border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+td { padding: 7px 12px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+td input {
+  background: transparent; border: none; color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif; font-size: 12px;
+  width: 100%; outline: none; border-bottom: 1px solid transparent; transition: border-color 0.2s;
+}
+td input:focus { border-bottom-color: var(--accent); }
+.add-row-btn {
+  width: 100%; padding: 9px; background: transparent; border: none;
+  border-top: 1px solid var(--border); color: var(--text-muted); font-size: 12px;
+  cursor: pointer; transition: all 0.2s; font-family: inherit;
+}
+.add-row-btn:hover { color: var(--accent); background: rgba(232,98,60,0.05); }
+
+/* ── BOTTOM BAR ── */
+.bottom-bar {
+  padding: 14px 24px; border-top: 1px solid var(--border);
+  display: flex; gap: 10px; align-items: center; background: var(--surface);
+  position: sticky; bottom: 0;
+}
+.total-display { margin-left: auto; font-size: 12px; color: var(--text-muted); }
+.total-amount { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: var(--accent); margin-left: 8px; }
+
+/* ── LIST PANEL ── */
+.filter-bar {
+  display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.filter-input {
+  padding: 9px 14px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: inherit; font-size: 13px;
+  outline: none; transition: border-color 0.2s;
+}
+.filter-input:focus { border-color: var(--accent); }
+.invoice-table { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.invoice-table table { width: 100%; }
+.invoice-table th { background: var(--surface2); }
+.invoice-table td { cursor: pointer; }
+.invoice-table tr:hover td { background: rgba(232,98,60,0.05); }
+.status-chip {
+  padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 500;
+  display: inline-block;
+}
+.status-pending { background: rgba(251,191,36,0.15); color: var(--warn); }
+.status-confirmed { background: rgba(52,211,153,0.15); color: var(--success); }
+
+/* ── TEMPLATE PANEL ── */
+.template-upload {
+  border: 2px dashed var(--border); border-radius: var(--radius);
+  padding: 48px 20px; text-align: center; cursor: pointer;
+  transition: all 0.2s; position: relative; margin-bottom: 20px;
+}
+.template-upload:hover { border-color: var(--accent); background: rgba(232,98,60,0.03); }
+.template-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.mapping-table { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.mapping-row { display: grid; grid-template-columns: 1fr 40px 1fr; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.mapping-row:last-child { border-bottom: none; }
+.mapping-col { font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+.mapping-arrow { color: var(--text-muted); text-align: center; }
+.mapping-select {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text); padding: 6px 10px;
+  font-family: inherit; font-size: 12px; outline: none; width: 100%;
+}
+
+/* ── ADMIN PANEL ── */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+}
+.stat-label { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { font-size: 28px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--accent); }
+.stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; padding: 12px 18px;
+  border-radius: 10px; font-size: 13px; font-weight: 500;
+  display: none; align-items: center; gap: 8px; z-index: 999;
+  animation: slideUp 0.3s ease;
+}
+.toast.show { display: flex; }
+.toast.success { background: var(--success); color: #fff; }
+.toast.error { background: #ef4444; color: #fff; }
+.toast.info { background: var(--accent2); color: #fff; }
+@keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ── EMPTY STATE ── */
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; gap: 10px; color: var(--text-muted); font-size: 13px; }
+.empty-state .icon { font-size: 40px; opacity: 0.4; }
+
+/* ── MODAL ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 100; }
+.modal-overlay.show { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 500px; max-width: calc(100vw - 40px); max-height: 80vh; overflow-y: auto; }
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+.modal-btn { padding: 9px 18px; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; border: none; }
+.modal-btn-primary { background: var(--accent); color: #fff; }
+.modal-btn-secondary { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ── AUTH SCREEN ── -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">🏥</div>
+      <div class="auth-logo-text">닥터스캔<span>Pro</span></div>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="loginForm">
+      <div class="auth-title">로그인</div>
+      <div class="auth-sub">병원 구매과 담당자 전용 서비스</div>
+      <div class="form-group">
+        <label>이메일</label>
+        <input type="email" id="loginEmail" placeholder="hospital@example.com">
+      </div>
+      <div class="form-group">
+        <label>비밀번호</label>
+        <input type="password" id="loginPassword" placeholder="••••••••">
+      </div>
+      <button class="btn btn-accent" onclick="login()">로그인</button>
+      <button class="btn btn-outline" onclick="showRegister()">회원가입</button>
+      <div class="auth-switch">관리자 <a onclick="showAdmin()">관리자 로그인</a></div>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="registerForm" style="display:none">
+      <div class="auth-title">회원가입</div>
+      <div class="auth-sub">병원 정보를 입력해주세요</div>
+      <div class="form-group">
+        <label>병원명</label>
+        <input type="text" id="regHospital" placeholder="○○병원">
+      </div>
+      <div class="form-group">
+        <label>담당자명</label>
+        <input type="text" id="regName" placeholder="홍길동">
+      </div>
+      <div class="form-group">
+        <label>이메일</label>
+        <input type="email" id="regEmail" placeholder="hospital@example.com">
+      </div>
+      <div class="form-group">
+        <label>비밀번호</label>
+        <input type="password" id="regPassword" placeholder="8자 이상">
+      </div>
+      <button class="btn btn-accent" onclick="register()">가입하기</button>
+      <button class="btn btn-outline" onclick="showLogin()">로그인으로 돌아가기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ── -->
+<div class="app" id="mainApp">
+  <header>
+    <div class="logo-icon">🏥</div>
+    <div class="logo-text">닥터스캔<span>Pro</span></div>
+    <div class="header-user">
+      <span class="user-badge" id="userBadge">로딩중...</span>
+      <button class="btn-sm" onclick="logout()">로그아웃</button>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <button class="nav-btn active" onclick="showPanel('scan', this)" title="스캔">
+        📷<span class="tooltip">명세서 스캔</span>
+      </button>
+      <button class="nav-btn" onclick="showPanel('list', this)">
+        📋<span class="tooltip">명세서 목록</span>
+      </button>
+      <button class="nav-btn" onclick="showPanel('template', this)">
+        📐<span class="tooltip">양식 설정</span>
+      </button>
+      <button class="nav-btn admin-only" onclick="showPanel('admin', this)" style="display:none">
+        ⚙️<span class="tooltip">관리자</span>
+      </button>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- ── SCAN PANEL ── -->
+      <div class="panel active" id="panelScan">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">거래명세서 스캔</div>
+            <div class="panel-sub">사진을 찍으면 AI가 자동으로 데이터를 입력합니다</div>
+          </div>
+        </div>
+
+        <div class="scan-layout">
+          <!-- LEFT: 이미지 업로드 -->
+          <div>
+            <div class="upload-zone" id="uploadZone">
+              <input type="file" id="fileInput" accept="image/*" capture="environment">
+              <div class="upload-icon">📄</div>
+              <div class="upload-main">사진 촬영 또는 파일 선택</div>
+              <div class="upload-sub">JPG, PNG, HEIC · 최대 10MB</div>
+            </div>
+            <img id="previewImg" class="preview-img" alt="미리보기">
+
+            <div class="status-bar" id="statusBar">
+              <div class="spinner" id="statusSpinner"></div>
+              <span id="statusText"></span>
+            </div>
+
+            <div class="action-row">
+              <button class="btn-primary" id="analyzeBtn" disabled onclick="analyze()">
+                🔍 AI 분석
+              </button>
+              <button class="btn-secondary" onclick="clearScan()">초기화</button>
+            </div>
+
+            <!-- API KEY 설정 -->
+            <div class="form-card">
+              <div class="form-card-header">🔑 Anthropic API 키</div>
+              <div style="padding:12px 16px">
+                <input type="password" class="field-input" id="apiKeyInput" placeholder="sk-ant-..." style="border-bottom:1px solid var(--border); padding-bottom:6px">
+                <div style="margin-top:8px">
+                  <button class="btn-secondary" style="font-size:11px;padding:5px 10px" onclick="saveApiKey()">저장</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: 데이터 입력 -->
+          <div>
+            <div id="formEmpty" class="empty-state">
+              <div class="icon">🔍</div>
+              <div>거래명세서를 스캔하면<br>자동으로 데이터가 입력됩니다</div>
+            </div>
+
+            <div id="formContent" style="display:none">
+              <!-- 기본 정보 -->
+              <div class="form-card">
+                <div class="form-card-header">📌 기본 정보</div>
+                <div class="form-grid">
+                  <div class="form-field">
+                    <div class="field-label">거래일자 <span class="conf-badge" id="cf-date">—</span></div>
+                    <input class="field-input" id="f-date" placeholder="YYYY-MM-DD">
+                  </div>
+                  <div class="form-field">
+                    <div class="field-label">명세서 번호 <span class="conf-badge" id="cf-docno">—</span></div>
+                    <input class="field-input" id="f-docno" placeholder="자동 입력">
+                  </div>
+                  <div class="form-field">
+                    <div class="field-label">공급업체명 <span class="conf-badge" id="cf-vendor">—</span></div>
+                    <input class="field-input" id="f-vendor" placeholder="업체명">
+                  </div>
+                  <div class="form-field">
+                    <div class="field-label">사업자번호 <span class="conf-badge" id="cf-bizno">—</span></div>
+                    <input class="field-input" id="f-bizno" placeholder="000-00-00000">
+                  </div>
+                  <div class="form-field full">
+                    <div class="field-label">담당자 <span class="conf-badge" id="cf-contact">—</span></div>
+                    <input class="field-input" id="f-contact" placeholder="담당자명 / 연락처">
+                  </div>
+                </div>
+              </div>
+
+              <!-- 병원 내부 -->
+              <div class="form-card">
+                <div class="form-card-header">🏥 병원 내부 분류</div>
+                <div class="form-grid">
+                  <div class="form-field">
+                    <div class="field-label">수령 부서</div>
+                    <input class="field-input" id="f-dept" placeholder="구매과">
+                  </div>
+                  <div class="form-field">
+                    <div class="field-label">거래 구분</div>
+                    <input class="field-input" id="f-type" placeholder="의약품 / 의료기기">
+                  </div>
+                  <div class="form-field">
+                    <div class="field-label">결제 조건</div>
+                    <input class="field-input" id="f-payment" placeholder="현금 / 외상">
+                  </div>
+                  <div class="form-field">
+                    <div class="field-label">입고 담당자</div>
+                    <input class="field-input" id="f-receiver" placeholder="담당자명">
+                  </div>
+                </div>
+              </div>
+
+              <!-- 품목 -->
+              <div class="form-card">
+                <div class="form-card-header">📦 품목 내역 <span class="conf-badge conf-mid" id="cf-items">—</span></div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>#</th><th>품목명</th><th>규격</th><th>단위</th>
+                        <th>수량</th><th>단가</th><th>공급가액</th><th>비고</th>
+                      </tr>
+                    </thead>
+                    <tbody id="itemsBody"></tbody>
+                  </table>
+                  <button class="add-row-btn" onclick="addItemRow()">+ 품목 추가</button>
+                </div>
+              </div>
+
+              <!-- 합계 -->
+              <div class="form-card">
+                <div class="form-card-header">💰 금액 합계</div>
+                <div class="form-grid">
+                  <div class="form-field">
+                    <div class="field-label">공급가액 <span class="conf-badge" id="cf-supply">—</span></div>
+                    <input class="field-input" id="f-supply" placeholder="0">
+                  </div>
+                  <div class="form-field">
+                    <div class="field-label">세액 (VAT)</div>
+                    <input class="field-input" id="f-vat" placeholder="0">
+                  </div>
+                  <div class="form-field full">
+                    <div class="field-label">합계금액 <span class="conf-badge" id="cf-total">—</span></div>
+                    <input class="field-input" id="f-total" placeholder="0" style="font-size:16px;font-weight:700;color:var(--accent)">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTTOM BAR -->
+        <div class="bottom-bar" id="bottomBar" style="display:none">
+          <button class="btn-secondary" onclick="exportExcel()">📥 엑셀 저장</button>
+          <button class="btn-primary" style="flex:none;width:auto;padding:10px 24px" onclick="saveInvoice()">💾 저장</button>
+          <div class="total-display">합계 <span class="total-amount" id="totalDisplay">—</span></div>
+        </div>
+      </div>
+
+      <!-- ── LIST PANEL ── -->
+      <div class="panel" id="panelList">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">명세서 목록</div>
+            <div class="panel-sub">저장된 거래명세서를 조회하고 엑셀로 내보낼 수 있습니다</div>
+          </div>
+          <button class="btn-secondary" onclick="exportAllExcel()">📥 전체 엑셀 추출</button>
+        </div>
+
+        <div class="filter-bar">
+          <input class="filter-input" id="filterVendor" placeholder="🔍 업체명 검색" oninput="filterInvoices()">
+          <input class="filter-input" type="date" id="filterFrom" onchange="filterInvoices()">
+          <input class="filter-input" type="date" id="filterTo" onchange="filterInvoices()">
+          <select class="filter-input" id="filterType" onchange="filterInvoices()">
+            <option value="">전체 구분</option>
+            <option value="의약품">의약품</option>
+            <option value="의료기기">의료기기</option>
+          </select>
+        </div>
+
+        <div class="invoice-table">
+          <table>
+            <thead>
+              <tr>
+                <th>거래일자</th><th>업체명</th><th>구분</th>
+                <th>품목 수</th><th>합계금액</th><th>상태</th><th>원본</th>
+              </tr>
+            </thead>
+            <tbody id="invoiceListBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── TEMPLATE PANEL ── -->
+      <div class="panel" id="panelTemplate">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">양식 설정</div>
+            <div class="panel-sub">병원에서 사용하는 엑셀 양식을 업로드하면 자동으로 컬럼을 매핑합니다</div>
+          </div>
+        </div>
+
+        <div class="template-upload" id="templateUpload">
+          <input type="file" id="templateFile" accept=".xlsx,.xls,.csv" onchange="handleTemplate(this)">
+          <div style="font-size:40px;margin-bottom:12px">📊</div>
+          <div style="font-size:15px;font-weight:600;margin-bottom:6px">병원 양식 엑셀 업로드</div>
+          <div style="font-size:12px;color:var(--text-muted)">.xlsx / .xls / .csv 지원 · 첫 번째 행이 헤더여야 합니다</div>
+        </div>
+
+        <div id="mappingArea" style="display:none">
+          <div style="font-size:14px;font-weight:600;margin-bottom:14px">
+            컬럼 매핑 설정
+            <span style="font-size:12px;font-weight:400;color:var(--text-muted);margin-left:8px">업로드된 양식의 컬럼을 닥터스캔Pro 필드와 연결하세요</span>
+          </div>
+          <div class="mapping-table" id="mappingTable"></div>
+          <div style="margin-top:14px;display:flex;gap:8px">
+            <button class="btn-primary" style="flex:none;width:auto;padding:10px 24px" onclick="saveMapping()">매핑 저장</button>
+            <button class="btn-secondary" onclick="resetTemplate()">초기화</button>
+          </div>
+        </div>
+
+        <div id="mappingSaved" style="display:none">
+          <div class="form-card" style="margin-top:0">
+            <div class="form-card-header">✅ 양식 매핑 완료</div>
+            <div style="padding:16px;font-size:13px;color:var(--text-muted)">
+              병원 양식이 설정되었습니다. 명세서 스캔 후 엑셀 저장 시 이 양식으로 내보냅니다.
+              <button class="btn-secondary" style="margin-top:12px;font-size:12px" onclick="resetTemplate()">양식 재설정</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ADMIN PANEL ── -->
+      <div class="panel" id="panelAdmin">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">관리자 대시보드</div>
+            <div class="panel-sub">전체 병원 현황 및 데이터를 조회합니다</div>
+          </div>
+          <button class="btn-secondary" onclick="exportAdminExcel()">📥 전체 데이터 추출</button>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">총 병원 수</div>
+            <div class="stat-value" id="statHospitals">—</div>
+            <div class="stat-sub">가입 병원</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">총 명세서</div>
+            <div class="stat-value" id="statInvoices">—</div>
+            <div class="stat-sub">전체 누적</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">이번 달</div>
+            <div class="stat-value" id="statMonthly">—</div>
+            <div class="stat-sub">월간 스캔 건수</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">총 거래금액</div>
+            <div class="stat-value" id="statAmount">—</div>
+            <div class="stat-sub">누적 합계</div>
+          </div>
+        </div>
+
+        <div class="invoice-table">
+          <table>
+            <thead>
+              <tr>
+                <th>병원명</th><th>거래일자</th><th>업체명</th>
+                <th>구분</th><th>품목 수</th><th>합계금액</th><th>원본</th>
+              </tr>
+            </thead>
+            <tbody id="adminListBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- IMAGE MODAL -->
+<div class="modal-overlay" id="imageModal">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-title">원본 거래명세서</div>
+    <img id="modalImg" style="width:100%;border-radius:8px" alt="원본">
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-secondary" onclick="closeModal('imageModal')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ────────────────────────────────────────────────
+let currentUser = null;
+let currentUserData = null;
+let currentImageBase64 = null;
+let currentImageType = 'image/jpeg';
+let currentImageUrl = null;
+let invoices = [];
+let templateMapping = JSON.parse(localStorage.getItem('drscanpro_mapping') || 'null');
+const ADMIN_EMAIL = 'yunolabs.inc@gmail.com';
+
+// ─── FIREBASE WAIT ────────────────────────────────────────
+function waitFirebase() {
+  return new Promise(resolve => {
+    const check = setInterval(() => {
+      if (window._firebase) { clearInterval(check); resolve(window._firebase); }
+    }, 100);
+  });
+}
+
+// ─── AUTH ─────────────────────────────────────────────────
+async function login() {
+  const fb = await waitFirebase();
+  const email = document.getElementById('loginEmail').value.trim();
+  const pw = document.getElementById('loginPassword').value;
+  if (!email || !pw) { showToast('이메일과 비밀번호를 입력하세요', 'error'); return; }
+  try {
+    await fb.signInWithEmailAndPassword(fb.auth, email, pw);
+  } catch(e) {
+    showToast('로그인 실패: ' + (e.code === 'auth/invalid-credential' ? '이메일 또는 비밀번호 오류' : e.message), 'error');
+  }
+}
+
+async function register() {
+  const fb = await waitFirebase();
+  const hospital = document.getElementById('regHospital').value.trim();
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pw = document.getElementById('regPassword').value;
+  if (!hospital || !name || !email || !pw) { showToast('모든 항목을 입력하세요', 'error'); return; }
+  try {
+    const cred = await fb.createUserWithEmailAndPassword(fb.auth, email, pw);
+    await fb.setDoc(fb.doc(fb.db, 'users', cred.user.uid), {
+      hospitalName: hospital, name, email, role: 'hospital', createdAt: fb.serverTimestamp()
+    });
+    showToast('가입 완료! 환영합니다 🎉', 'success');
+  } catch(e) {
+    showToast('가입 실패: ' + e.message, 'error');
+  }
+}
+
+async function logout() {
+  const fb = await waitFirebase();
+  await fb.signOut(fb.auth);
+}
+
+// ─── AUTH STATE ───────────────────────────────────────────
+async function initAuth() {
+  const fb = await waitFirebase();
+  fb.onAuthStateChanged(fb.auth, async user => {
+    if (user) {
+      currentUser = user;
+      const snap = await fb.getDoc(fb.doc(fb.db, 'users', user.uid));
+      currentUserData = snap.exists() ? snap.data() : { hospitalName: user.email, role: user.email === ADMIN_EMAIL ? 'admin' : 'hospital' };
+
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'flex';
+      document.getElementById('userBadge').textContent = currentUserData.hospitalName || user.email;
+
+      if (currentUserData.role === 'admin' || user.email === ADMIN_EMAIL) {
+        document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'flex');
+      }
+
+      const savedKey = localStorage.getItem('drscanpro_apikey');
+      if (savedKey) document.getElementById('apiKeyInput').value = savedKey;
+      if (templateMapping) document.getElementById('mappingSaved').style.display = 'block';
+
+      loadInvoices();
+    } else {
+      currentUser = null;
+      document.getElementById('authScreen').style.display = 'flex';
+      document.getElementById('mainApp').style.display = 'none';
+    }
+  });
+}
+
+// ─── NAVIGATION ───────────────────────────────────────────
+function showPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name === 'list') loadInvoices();
+  if (name === 'admin') loadAdminData();
+}
+
+function showRegister() { document.getElementById('loginForm').style.display='none'; document.getElementById('registerForm').style.display='block'; }
+function showLogin() { document.getElementById('registerForm').style.display='none'; document.getElementById('loginForm').style.display='block'; }
+function showAdmin() { document.getElementById('loginEmail').value = ADMIN_EMAIL; document.getElementById('loginPassword').focus(); }
+
+// ─── FILE UPLOAD ──────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const fileInput = document.getElementById('fileInput');
+  const uploadZone = document.getElementById('uploadZone');
+
+  fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+  uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+
+  addItemRow();
+  initAuth();
+});
+
+function handleFile(file) {
+  if (!file.type.startsWith('image/')) { showToast('이미지 파일만 가능합니다', 'error'); return; }
+  currentImageType = file.type;
+  const reader = new FileReader();
+  reader.onload = e => {
+    currentImageBase64 = e.target.result.split(',')[1];
+    const img = document.getElementById('previewImg');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.getElementById('analyzeBtn').disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── ANALYZE ─────────────────────────────────────────────
+async function analyze() {
+  const apiKey = localStorage.getItem('drscanpro_apikey');
+  if (!apiKey) { showToast('API 키를 먼저 설정하세요', 'error'); return; }
+  if (!currentImageBase64) return;
+
+  setStatus('processing', '거래명세서 분석 중...');
+  document.getElementById('analyzeBtn').disabled = true;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 2000,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: currentImageType, data: currentImageBase64 } },
+            { type: 'text', text: '거래명세서에서 모든 정보를 추출하여 아래 JSON 형식으로만 응답하세요. JSON 외 텍스트 없이:\n{"date":"YYYY-MM-DD","docNo":"","vendor":"","bizNo":"","contact":"","type":"의약품 또는 의료기기","paymentTerms":"","items":[{"name":"","spec":"","unit":"","qty":0,"unitPrice":0,"amount":0,"note":""}],"supplyAmount":0,"vat":0,"totalAmount":0,"confidence":{"date":0.9,"docNo":0.8,"vendor":0.95,"bizNo":0.7,"contact":0.6,"items":0.85,"supplyAmount":0.9,"totalAmount":0.9}}' }
+          ]
+        }]
+      })
+    });
+
+    if (!res.ok) throw new Error((await res.json()).error?.message || 'API 오류');
+    const data = await res.json();
+    const match = data.content[0].text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('파싱 실패');
+    fillForm(JSON.parse(match[0]));
+    setStatus('success', '분석 완료! 내용을 확인하고 저장하세요');
+    document.getElementById('formEmpty').style.display = 'none';
+    document.getElementById('formContent').style.display = 'block';
+    document.getElementById('bottomBar').style.display = 'flex';
+    showToast('분석 완료 ✓', 'success');
+  } catch(e) {
+    setStatus('error', '오류: ' + e.message);
+    showToast('분석 실패: ' + e.message, 'error');
+  } finally {
+    document.getElementById('analyzeBtn').disabled = false;
+  }
+}
+
+// ─── FILL FORM ────────────────────────────────────────────
+function fillForm(d) {
+  const s = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+  s('f-date', d.date); s('f-docno', d.docNo); s('f-vendor', d.vendor);
+  s('f-bizno', d.bizNo); s('f-contact', d.contact); s('f-type', d.type);
+  s('f-payment', d.paymentTerms);
+  s('f-supply', d.supplyAmount ? Number(d.supplyAmount).toLocaleString() : '');
+  s('f-vat', d.vat ? Number(d.vat).toLocaleString() : '');
+  s('f-total', d.totalAmount ? Number(d.totalAmount).toLocaleString() : '');
+  if (d.totalAmount) document.getElementById('totalDisplay').textContent = Number(d.totalAmount).toLocaleString() + '원';
+
+  const conf = d.confidence || {};
+  const map = [['date','date'],['docno','docNo'],['vendor','vendor'],['bizno','bizNo'],['contact','contact'],['items','items'],['supply','supplyAmount'],['total','totalAmount']];
+  map.forEach(([f, k]) => {
+    const el = document.getElementById('cf-' + f);
+    if (!el) return;
+    const v = conf[k] || 0;
+    const pct = Math.round(v * 100);
+    el.textContent = pct + '%';
+    el.className = 'conf-badge ' + (v >= 0.8 ? 'conf-high' : v >= 0.5 ? 'conf-mid' : 'conf-low');
+  });
+
+  document.getElementById('itemsBody').innerHTML = '';
+  if (d.items && d.items.length) d.items.forEach(item => addItemRow(item));
+  else addItemRow();
+}
+
+// ─── ITEMS ────────────────────────────────────────────────
+function addItemRow(item) {
+  item = item || {};
+  const tbody = document.getElementById('itemsBody');
+  const n = tbody.children.length + 1;
+  const tr = document.createElement('tr');
+  tr.innerHTML =
+    '<td style="color:var(--text-muted);font-size:11px">' + n + '</td>' +
+    '<td><input value="' + esc(item.name) + '" placeholder="품목명" style="min-width:120px"></td>' +
+    '<td><input value="' + esc(item.spec) + '" placeholder="규격" style="width:80px"></td>' +
+    '<td><input value="' + esc(item.unit) + '" placeholder="단위" style="width:50px"></td>' +
+    '<td><input value="' + esc(item.qty) + '" placeholder="0" style="width:50px" oninput="recalcRow(this)"></td>' +
+    '<td><input value="' + esc(item.unitPrice ? Number(item.unitPrice).toLocaleString() : '') + '" placeholder="0" style="width:80px" oninput="recalcRow(this)"></td>' +
+    '<td><input value="' + esc(item.amount ? Number(item.amount).toLocaleString() : '') + '" placeholder="0" style="width:90px"></td>' +
+    '<td><input value="' + esc(item.note) + '" placeholder="—" style="width:60px"></td>';
+  tbody.appendChild(tr);
+}
+
+function recalcRow(input) {
+  const tr = input.closest('tr');
+  const inputs = tr.querySelectorAll('input');
+  const qty = parseFloat(inputs[3].value.replace(/,/g,'')) || 0;
+  const price = parseFloat(inputs[4].value.replace(/,/g,'')) || 0;
+  if (qty && price) inputs[5].value = (qty * price).toLocaleString();
+  recalcTotals();
+}
+
+function recalcTotals() {
+  let total = 0;
+  document.getElementById('itemsBody').querySelectorAll('tr').forEach(tr => {
+    total += parseFloat(tr.querySelectorAll('input')[5]?.value.replace(/,/g,'')) || 0;
+  });
+  const vat = Math.round(total * 0.1);
+  document.getElementById('f-supply').value = total.toLocaleString();
+  document.getElementById('f-vat').value = vat.toLocaleString();
+  document.getElementById('f-total').value = (total + vat).toLocaleString();
+  document.getElementById('totalDisplay').textContent = (total + vat).toLocaleString() + '원';
+}
+
+function esc(v) { return String(v || '').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+// ─── SAVE ─────────────────────────────────────────────────
+async function saveInvoice() {
+  if (!currentUser) return;
+  const fb = window._firebase;
+
+  setStatus('processing', '저장 중...');
+
+  try {
+    // 이미지 base64로 Firestore에 직접 저장
+    let imageUrl = null;
+    if (currentImageBase64) {
+      imageUrl = 'data:' + currentImageType + ';base64,' + currentImageBase64;
+    }
+
+    // 품목 수집
+    const items = [];
+    document.getElementById('itemsBody').querySelectorAll('tr').forEach(tr => {
+      const inputs = tr.querySelectorAll('input');
+      if (inputs[0]?.value) {
+        items.push({
+          name: inputs[0].value, spec: inputs[1].value, unit: inputs[2].value,
+          qty: inputs[3].value, unitPrice: inputs[4].value,
+          amount: inputs[5].value, note: inputs[6].value
+        });
+      }
+    });
+
+    const invoice = {
+      hospitalId: currentUser.uid,
+      hospitalName: currentUserData?.hospitalName || '',
+      date: document.getElementById('f-date').value,
+      docNo: document.getElementById('f-docno').value,
+      vendor: document.getElementById('f-vendor').value,
+      bizNo: document.getElementById('f-bizno').value,
+      contact: document.getElementById('f-contact').value,
+      dept: document.getElementById('f-dept').value,
+      type: document.getElementById('f-type').value,
+      payment: document.getElementById('f-payment').value,
+      receiver: document.getElementById('f-receiver').value,
+      supplyAmount: document.getElementById('f-supply').value,
+      vat: document.getElementById('f-vat').value,
+      totalAmount: document.getElementById('f-total').value,
+      items,
+      imageUrl,
+      status: 'confirmed',
+      createdAt: fb.serverTimestamp()
+    };
+
+    await fb.addDoc(fb.collection(fb.db, 'invoices'), invoice);
+    setStatus('success', '저장 완료!');
+    showToast('저장되었습니다 ✓', 'success');
+    clearScan();
+  } catch(e) {
+    setStatus('error', '저장 실패: ' + e.message);
+    showToast('저장 실패: ' + e.message, 'error');
+  }
+}
+
+// ─── LOAD INVOICES ────────────────────────────────────────
+async function loadInvoices() {
+  if (!currentUser) return;
+  const fb = window._firebase;
+  try {
+    const isAdmin = currentUserData?.role === 'admin' || currentUser.email === ADMIN_EMAIL;
+    let q;
+    if (isAdmin) {
+      q = fb.query(fb.collection(fb.db, 'invoices'), fb.orderBy('createdAt', 'desc'));
+    } else {
+      q = fb.query(fb.collection(fb.db, 'invoices'), fb.where('hospitalId', '==', currentUser.uid), fb.orderBy('createdAt', 'desc'));
+    }
+    const snap = await fb.getDocs(q);
+    invoices = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderInvoiceList(invoices);
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function renderInvoiceList(list) {
+  const tbody = document.getElementById('invoiceListBody');
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">저장된 명세서가 없습니다</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(inv =>
+    '<tr onclick="viewInvoice(\'' + inv.id + '\')">' +
+    '<td>' + (inv.date || '—') + '</td>' +
+    '<td style="font-weight:500">' + (inv.vendor || '—') + '</td>' +
+    '<td>' + (inv.type || '—') + '</td>' +
+    '<td>' + (inv.items?.length || 0) + '개</td>' +
+    '<td style="font-family:JetBrains Mono,monospace;color:var(--accent)">' + (inv.totalAmount ? inv.totalAmount + '원' : '—') + '</td>' +
+    '<td><span class="status-chip ' + (inv.status === 'confirmed' ? 'status-confirmed' : 'status-pending') + '">' + (inv.status === 'confirmed' ? '확정' : '검수중') + '</span></td>' +
+    '<td>' + (inv.imageUrl ? '<button class="btn-sm" onclick="event.stopPropagation();viewImage(\'' + inv.imageUrl + '\')">원본</button>' : '—') + '</td>' +
+    '</tr>'
+  ).join('');
+}
+
+function filterInvoices() {
+  const vendor = document.getElementById('filterVendor').value.toLowerCase();
+  const from = document.getElementById('filterFrom').value;
+  const to = document.getElementById('filterTo').value;
+  const type = document.getElementById('filterType').value;
+  const filtered = invoices.filter(inv => {
+    if (vendor && !(inv.vendor || '').toLowerCase().includes(vendor)) return false;
+    if (from && inv.date < from) return false;
+    if (to && inv.date > to) return false;
+    if (type && inv.type !== type) return false;
+    return true;
+  });
+  renderInvoiceList(filtered);
+}
+
+// ─── EXCEL EXPORT ─────────────────────────────────────────
+function exportExcel() {
+  const items = [];
+  document.getElementById('itemsBody').querySelectorAll('tr').forEach((tr, i) => {
+    const inputs = tr.querySelectorAll('input');
+    items.push([i+1, inputs[0]?.value, inputs[1]?.value, inputs[2]?.value, inputs[3]?.value, inputs[4]?.value, inputs[5]?.value, inputs[6]?.value]);
+  });
+
+  if (templateMapping) {
+    exportWithTemplate([getFormData()], templateMapping);
+  } else {
+    const wb = XLSX.utils.book_new();
+    const header = [['거래일자','명세서번호','공급업체','사업자번호','담당자','부서','구분','결제조건','공급가액','세액','합계금액']];
+    const row = [document.getElementById('f-date').value, document.getElementById('f-docno').value, document.getElementById('f-vendor').value, document.getElementById('f-bizno').value, document.getElementById('f-contact').value, document.getElementById('f-dept').value, document.getElementById('f-type').value, document.getElementById('f-payment').value, document.getElementById('f-supply').value, document.getElementById('f-vat').value, document.getElementById('f-total').value];
+    const ws1 = XLSX.utils.aoa_to_sheet([...header, row]);
+    XLSX.utils.book_append_sheet(wb, ws1, '기본정보');
+    const itemHeader = [['#','품목명','규격','단위','수량','단가','공급가액','비고']];
+    const ws2 = XLSX.utils.aoa_to_sheet([...itemHeader, ...items]);
+    XLSX.utils.book_append_sheet(wb, ws2, '품목내역');
+    XLSX.writeFile(wb, (document.getElementById('f-vendor').value || '명세서') + '_' + (document.getElementById('f-date').value || 'date') + '.xlsx');
+  }
+  showToast('엑셀 저장 완료', 'success');
+}
+
+function exportAllExcel() {
+  if (!invoices.length) { showToast('저장된 명세서가 없습니다', 'error'); return; }
+  const wb = XLSX.utils.book_new();
+  const header = [['병원명','거래일자','업체명','사업자번호','구분','부서','공급가액','세액','합계금액','상태']];
+  const rows = invoices.map(inv => [inv.hospitalName, inv.date, inv.vendor, inv.bizNo, inv.type, inv.dept, inv.supplyAmount, inv.vat, inv.totalAmount, inv.status]);
+  const ws = XLSX.utils.aoa_to_sheet([...header, ...rows]);
+  XLSX.utils.book_append_sheet(wb, ws, '명세서목록');
+  XLSX.writeFile(wb, '닥터스캔Pro_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  showToast('전체 엑셀 추출 완료', 'success');
+}
+
+function exportWithTemplate(dataArr, mapping) {
+  const wb = XLSX.utils.book_new();
+  const headerRow = mapping.map(m => m.originalCol);
+  const rows = dataArr.map(d => mapping.map(m => d[m.field] || ''));
+  const ws = XLSX.utils.aoa_to_sheet([headerRow, ...rows]);
+  XLSX.utils.book_append_sheet(wb, ws, '거래명세서');
+  XLSX.writeFile(wb, '닥터스캔Pro_병원양식_' + new Date().toISOString().slice(0,10) + '.xlsx');
+}
+
+function getFormData() {
+  return {
+    date: document.getElementById('f-date').value,
+    docNo: document.getElementById('f-docno').value,
+    vendor: document.getElementById('f-vendor').value,
+    bizNo: document.getElementById('f-bizno').value,
+    contact: document.getElementById('f-contact').value,
+    dept: document.getElementById('f-dept').value,
+    type: document.getElementById('f-type').value,
+    payment: document.getElementById('f-payment').value,
+    supplyAmount: document.getElementById('f-supply').value,
+    vat: document.getElementById('f-vat').value,
+    totalAmount: document.getElementById('f-total').value,
+  };
+}
+
+// ─── TEMPLATE ─────────────────────────────────────────────
+function handleTemplate(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result, { type: 'binary' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+    if (!data.length) { showToast('헤더를 찾을 수 없습니다', 'error'); return; }
+    const headers = data[0].filter(Boolean);
+    renderMappingUI(headers);
+  };
+  reader.readAsBinaryString(file);
+}
+
+const FIELDS = [
+  { value: 'date', label: '거래일자' }, { value: 'docNo', label: '명세서번호' },
+  { value: 'vendor', label: '공급업체명' }, { value: 'bizNo', label: '사업자번호' },
+  { value: 'contact', label: '담당자' }, { value: 'dept', label: '부서' },
+  { value: 'type', label: '거래구분' }, { value: 'payment', label: '결제조건' },
+  { value: 'supplyAmount', label: '공급가액' }, { value: 'vat', label: '세액' },
+  { value: 'totalAmount', label: '합계금액' }, { value: '', label: '(매핑 안함)' }
+];
+
+function renderMappingUI(headers) {
+  const area = document.getElementById('mappingArea');
+  const table = document.getElementById('mappingTable');
+  area.style.display = 'block';
+
+  table.innerHTML = headers.map(col => {
+    const options = FIELDS.map(f => '<option value="' + f.value + '">' + f.label + '</option>').join('');
+    return '<div class="mapping-row">' +
+      '<div class="mapping-col">📊 ' + col + '</div>' +
+      '<div class="mapping-arrow">→</div>' +
+      '<select class="mapping-select" data-col="' + col + '">' + options + '</select>' +
+      '</div>';
+  }).join('');
+
+  // 자동 매핑 시도
+  headers.forEach(col => {
+    const sel = table.querySelector('[data-col="' + col + '"]');
+    if (!sel) return;
+    const lower = col.toLowerCase();
+    const match = FIELDS.find(f => f.label && (lower.includes(f.label) || f.label.includes(col)));
+    if (match) sel.value = match.value;
+  });
+}
+
+function saveMapping() {
+  const selects = document.querySelectorAll('#mappingTable .mapping-select');
+  const mapping = [];
+  selects.forEach(sel => {
+    if (sel.value) mapping.push({ originalCol: sel.dataset.col, field: sel.value });
+  });
+  templateMapping = mapping;
+  localStorage.setItem('drscanpro_mapping', JSON.stringify(mapping));
+  document.getElementById('mappingArea').style.display = 'none';
+  document.getElementById('mappingSaved').style.display = 'block';
+  showToast('양식 매핑 저장 완료 ✓', 'success');
+}
+
+function resetTemplate() {
+  templateMapping = null;
+  localStorage.removeItem('drscanpro_mapping');
+  document.getElementById('mappingSaved').style.display = 'none';
+  document.getElementById('mappingArea').style.display = 'none';
+  document.getElementById('templateFile').value = '';
+  showToast('양식 초기화 완료', 'info');
+}
+
+// ─── ADMIN ────────────────────────────────────────────────
+async function loadAdminData() {
+  const fb = window._firebase;
+  try {
+    const snap = await fb.getDocs(fb.collection(fb.db, 'invoices'));
+    const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    const hospitals = new Set(all.map(i => i.hospitalId)).size;
+    const monthly = all.filter(i => {
+      const d = i.date || '';
+      const now = new Date().toISOString().slice(0,7);
+      return d.startsWith(now);
+    }).length;
+    const totalAmt = all.reduce((s, i) => s + (parseFloat((i.totalAmount || '').replace(/,/g,'')) || 0), 0);
+
+    document.getElementById('statHospitals').textContent = hospitals;
+    document.getElementById('statInvoices').textContent = all.length;
+    document.getElementById('statMonthly').textContent = monthly;
+    document.getElementById('statAmount').textContent = Math.round(totalAmt / 10000) + '만';
+
+    document.getElementById('adminListBody').innerHTML = all.map(inv =>
+      '<tr>' +
+      '<td style="font-weight:500">' + (inv.hospitalName || '—') + '</td>' +
+      '<td>' + (inv.date || '—') + '</td>' +
+      '<td>' + (inv.vendor || '—') + '</td>' +
+      '<td>' + (inv.type || '—') + '</td>' +
+      '<td>' + (inv.items?.length || 0) + '개</td>' +
+      '<td style="font-family:JetBrains Mono,monospace;color:var(--accent)">' + (inv.totalAmount ? inv.totalAmount + '원' : '—') + '</td>' +
+      '<td>' + (inv.imageUrl ? '<button class="btn-sm" onclick="viewImage(\'' + inv.imageUrl + '\')">원본</button>' : '—') + '</td>' +
+      '</tr>'
+    ).join('');
+  } catch(e) { console.error(e); }
+}
+
+function exportAdminExcel() {
+  exportAllExcel();
+}
+
+// ─── UTILS ────────────────────────────────────────────────
+function viewImage(url) {
+  document.getElementById('modalImg').src = url;
+  document.getElementById('imageModal').classList.add('show');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function viewInvoice(id) {
+  const inv = invoices.find(i => i.id === id);
+  if (!inv) return;
+  if (inv.imageUrl) viewImage(inv.imageUrl);
+}
+
+function clearScan() {
+  currentImageBase64 = null;
+  document.getElementById('fileInput').value = '';
+  document.getElementById('previewImg').style.display = 'none';
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('formEmpty').style.display = 'flex';
+  document.getElementById('formContent').style.display = 'none';
+  document.getElementById('bottomBar').style.display = 'none';
+  document.getElementById('itemsBody').innerHTML = '';
+  addItemRow();
+  setStatus('');
+}
+
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) return;
+  localStorage.setItem('drscanpro_apikey', key);
+  showToast('API 키 저장 완료', 'success');
+}
+
+function setStatus(type, text) {
+  const bar = document.getElementById('statusBar');
+  bar.className = 'status-bar';
+  if (!type) { bar.style.display = 'none'; return; }
+  bar.classList.add(type);
+  document.getElementById('statusText').textContent = text || '';
+  document.getElementById('statusSpinner').style.display = type === 'processing' ? 'block' : 'none';
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || 'info');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
