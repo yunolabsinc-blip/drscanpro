@@ -55,8 +55,8 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2000,
+        model: 'claude-sonnet-4-6-20250514',
+        max_tokens: 4000,
         messages: [{
           role: 'user',
           content: [
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
             },
             {
               type: 'text',
-              text: '거래명세서에서 모든 정보를 추출하여 아래 JSON 형식으로만 응답하세요. JSON 외 텍스트 없이:\n{"date":"YYYY-MM-DD","docNo":"","vendor":"","bizNo":"","contact":"","type":"의약품 또는 의료기기","paymentTerms":"","items":[{"code":"보험코드/제품코드","name":"품명","spec":"규격","unit":"단위","qty":0,"unitPrice":0,"unitPriceVat":0,"amount":0,"manufacturer":"제조사"}],"supplyAmount":0,"vat":0,"totalAmount":0,"confidence":{"date":0.9,"docNo":0.8,"vendor":0.95,"bizNo":0.7,"contact":0.6,"items":0.85,"supplyAmount":0.9,"totalAmount":0.9}}'
+              text: '이 거래명세서(invoice) 이미지에서 모든 정보를 정확하게 추출하세요.\n\n규칙:\n- 숫자(수량, 단가, 금액)는 반드시 정확하게 읽을 것. 쉼표 제거 후 숫자만.\n- 보험코드/제품코드가 있으면 반드시 추출. 없으면 빈 문자열.\n- 제조사(manufacturer)가 있으면 반드시 추출.\n- 단가(unitPrice)는 VAT 불포함 가격, unitPriceVat는 VAT 포함 가격. 하나만 있으면 다른 하나를 계산(VAT 10%).\n- 모든 품목 행을 빠짐없이 추출할 것.\n- 합계금액이 명시되어 있으면 그대로 사용, 없으면 품목 합산.\n\nJSON 형식으로만 응답 (JSON 외 텍스트 없이):\n{"date":"YYYY-MM-DD","docNo":"문서번호","vendor":"공급업체명","bizNo":"사업자등록번호","contact":"담당자/연락처","type":"의약품 또는 의료기기","paymentTerms":"결제조건","items":[{"code":"보험코드/제품코드","name":"품명","spec":"규격","unit":"단위","qty":0,"unitPrice":0,"unitPriceVat":0,"amount":0,"manufacturer":"제조사"}],"supplyAmount":0,"vat":0,"totalAmount":0,"confidence":{"date":0.95,"docNo":0.9,"vendor":0.95,"bizNo":0.9,"contact":0.8,"items":0.95,"supplyAmount":0.95,"totalAmount":0.95}}'
             }
           ]
         }]
