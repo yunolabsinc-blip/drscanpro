@@ -199,6 +199,11 @@ header {
 }
 .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
 .admin-tab.active, .date-quick.active { border-color: var(--accent); color: var(--accent); background: rgba(232,98,60,0.08); }
+.sortable { cursor: pointer; user-select: none; }
+.sortable:hover { color: var(--accent); }
+.sort-icon::after { content: ''; margin-left: 2px; }
+.sort-icon.asc::after { content: ' ▲'; }
+.sort-icon.desc::after { content: ' ▼'; }
 
 /* ── STATUS ── */
 .status-bar {
@@ -717,7 +722,8 @@ td input:focus { border-bottom-color: var(--accent); }
           <button class="btn-secondary date-quick" onclick="setDateFilter('all',this)" style="font-size:11px;padding:6px 12px">전체</button>
         </div>
         <div class="filter-bar">
-          <input class="filter-input" id="filterVendor" placeholder="🔍 업체명 검색" oninput="filterInvoices()">
+          <input class="filter-input" id="filterVendor" placeholder="🔍 업체명 / 거래처명 검색">
+          <input class="filter-input" id="filterHospital" placeholder="🏥 병원명 검색" style="display:none">
           <input class="filter-input" type="date" id="filterFrom">
           <input class="filter-input" type="date" id="filterTo">
           <select class="filter-input" id="filterType">
@@ -731,10 +737,14 @@ td input:focus { border-bottom-color: var(--accent); }
         <div class="invoice-table">
           <table>
             <thead>
-              <tr>
+              <tr id="listTableHeader">
                 <th style="width:36px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" style="accent-color:var(--accent);cursor:pointer"></th>
-                <th>거래일자</th><th>업체명</th><th>구분</th>
-                <th>품목 수</th><th>합계금액</th><th>상태</th><th>관리</th>
+                <th class="sortable" onclick="sortInvoices('date')">거래일자 <span class="sort-icon" data-col="date"></span></th>
+                <th class="sortable" onclick="sortInvoices('vendor')">업체명 <span class="sort-icon" data-col="vendor"></span></th>
+                <th>구분</th>
+                <th class="sortable" onclick="sortInvoices('items')">품목 수 <span class="sort-icon" data-col="items"></span></th>
+                <th class="sortable" onclick="sortInvoices('totalAmount')">합계금액 <span class="sort-icon" data-col="totalAmount"></span></th>
+                <th>상태</th><th>관리</th>
               </tr>
             </thead>
             <tbody id="invoiceListBody"></tbody>
@@ -1485,10 +1495,31 @@ async function loadInvoices() {
   }
 }
 
+let currentSort = { col: null, dir: 'desc' };
+
+function isAdminUser() {
+  return currentUserData?.role === 'admin' || currentUser?.email === ADMIN_EMAIL;
+}
+
 function renderInvoiceList(list) {
   const tbody = document.getElementById('invoiceListBody');
+  const admin = isAdminUser();
+  const cols = admin ? 9 : 8;
+
+  // 관리자: 병원명 컬럼 + 검색란 표시
+  const header = document.getElementById('listTableHeader');
+  const hasHospitalCol = header.querySelector('.th-hospital');
+  if (admin && !hasHospitalCol) {
+    const th = document.createElement('th');
+    th.className = 'sortable th-hospital';
+    th.onclick = () => sortInvoices('hospitalName');
+    th.innerHTML = '병원명 <span class="sort-icon" data-col="hospitalName"></span>';
+    header.insertBefore(th, header.children[1]); // 체크박스 다음
+    document.getElementById('filterHospital').style.display = '';
+  }
+
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)">저장된 명세서가 없습니다</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="' + cols + '" style="text-align:center;padding:40px;color:var(--text-muted)">저장된 명세서가 없습니다</td></tr>';
     document.getElementById('selectAll').checked = false;
     updateSelectionUI();
     return;
@@ -1496,6 +1527,7 @@ function renderInvoiceList(list) {
   tbody.innerHTML = list.map(inv =>
     '<tr>' +
     '<td onclick="event.stopPropagation()"><input type="checkbox" class="inv-check" value="' + inv.id + '" onchange="updateSelectionUI()" style="accent-color:var(--accent);cursor:pointer"></td>' +
+    (admin ? '<td style="font-weight:500;font-size:11px">' + (inv.hospitalName || '—') + '</td>' : '') +
     '<td>' + (inv.date || '—') + '</td>' +
     '<td style="font-weight:500">' + (inv.vendor || '—') + '</td>' +
     '<td>' + (inv.type || '—') + '</td>' +
@@ -1511,6 +1543,39 @@ function renderInvoiceList(list) {
   ).join('');
   document.getElementById('selectAll').checked = false;
   updateSelectionUI();
+}
+
+function sortInvoices(col) {
+  if (currentSort.col === col) {
+    currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort.col = col;
+    currentSort.dir = 'asc';
+  }
+
+  // 아이콘 업데이트
+  document.querySelectorAll('.sort-icon').forEach(s => s.className = 'sort-icon');
+  const icon = document.querySelector('.sort-icon[data-col="' + col + '"]');
+  if (icon) icon.classList.add(currentSort.dir);
+
+  const dir = currentSort.dir === 'asc' ? 1 : -1;
+  const sorted = [...invoices].sort((a, b) => {
+    let va, vb;
+    if (col === 'totalAmount') {
+      va = parseFloat((a.totalAmount || '0').replace(/,/g, '')) || 0;
+      vb = parseFloat((b.totalAmount || '0').replace(/,/g, '')) || 0;
+    } else if (col === 'items') {
+      va = a.items?.length || 0;
+      vb = b.items?.length || 0;
+    } else {
+      va = (a[col] || '').toLowerCase();
+      vb = (b[col] || '').toLowerCase();
+    }
+    if (va < vb) return -1 * dir;
+    if (va > vb) return 1 * dir;
+    return 0;
+  });
+  renderInvoiceList(sorted);
 }
 
 function setDateFilter(type, btn) {
@@ -1544,11 +1609,13 @@ function setDateFilter(type, btn) {
 
 function filterInvoices() {
   const vendor = document.getElementById('filterVendor').value.toLowerCase();
+  const hospital = document.getElementById('filterHospital').value.toLowerCase();
   const from = document.getElementById('filterFrom').value;
   const to = document.getElementById('filterTo').value;
   const type = document.getElementById('filterType').value;
   const filtered = invoices.filter(inv => {
     if (vendor && !(inv.vendor || '').toLowerCase().includes(vendor)) return false;
+    if (hospital && !(inv.hospitalName || '').toLowerCase().includes(hospital)) return false;
     if (from && inv.date < from) return false;
     if (to && inv.date > to) return false;
     if (type && inv.type !== type) return false;
