@@ -1373,8 +1373,7 @@ function compressImage(file, maxSize, quality) {
 
 // ─── ANALYZE (Vercel 프록시 사용 → CORS 해결) ───────────
 async function analyze() {
-  const apiKey = localStorage.getItem('drscanpro_apikey');
-  if (!apiKey) { showToast('API 키를 먼저 설정하세요', 'error'); return; }
+  const apiKey = localStorage.getItem('drscanpro_apikey') || '';
   if (!currentImageBase64) return;
 
   setStatus('processing', '거래명세서 분석 중...');

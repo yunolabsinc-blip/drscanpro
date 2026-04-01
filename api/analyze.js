@@ -9,10 +9,11 @@ export default async function handler(req, res) {
 
   try {
     const { imageBase64, imageType, apiKey, testOnly } = req.body || {};
-    const trimmedKey = (apiKey || '').trim();
+    // 우선순위: 사용자 입력 키 > 서버 환경변수
+    const trimmedKey = (apiKey || '').trim() || (process.env.ANTHROPIC_API_KEY || '').trim();
 
     if (!trimmedKey) {
-      return res.status(400).json({ error: 'API 키가 없습니다' });
+      return res.status(400).json({ error: 'API 키가 없습니다. 키를 입력하거나 서버 환경변수를 설정하세요.' });
     }
 
     // 키 테스트 모드: 간단한 텍스트 요청으로 키 유효성만 확인
