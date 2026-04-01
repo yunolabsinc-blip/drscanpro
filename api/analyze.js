@@ -8,10 +8,42 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { imageBase64, imageType, apiKey } = req.body || {};
+    const { imageBase64, imageType, apiKey, testOnly } = req.body || {};
     const trimmedKey = (apiKey || '').trim();
-    if (!imageBase64 || !trimmedKey) {
-      return res.status(400).json({ error: '필수 파라미터가 없습니다 (이미지: ' + !!imageBase64 + ', 키: ' + !!trimmedKey + ')' });
+
+    if (!trimmedKey) {
+      return res.status(400).json({ error: 'API 키가 없습니다' });
+    }
+
+    // 키 테스트 모드: 간단한 텍스트 요청으로 키 유효성만 확인
+    if (testOnly) {
+      const testRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': trimmedKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 10,
+          messages: [{ role: 'user', content: 'hi' }]
+        })
+      });
+
+      if (testRes.ok) {
+        return res.status(200).json({ testResult: 'ok' });
+      } else {
+        const err = await testRes.json().catch(() => ({}));
+        return res.status(testRes.status).json({
+          error: err.error?.message || 'API 키 인증 실패 (HTTP ' + testRes.status + ')'
+        });
+      }
+    }
+
+    // 일반 분석 모드
+    if (!imageBase64) {
+      return res.status(400).json({ error: '이미지가 없습니다' });
     }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -44,7 +76,7 @@ export default async function handler(req, res) {
       const err = await response.json().catch(() => ({}));
       const msg = err.error?.message || 'API 오류';
       return res.status(response.status).json({
-        error: response.status === 401 ? 'API 키가 유효하지 않습니다. 키를 확인해주세요. (' + msg + ')' : msg
+        error: response.status === 401 ? 'API 키가 유효하지 않습니다. (' + msg + ')' : msg
       });
     }
 
