@@ -6,6 +6,8 @@
 <title>닥터스캔Pro — 병원 구매과 거래명세서 자동화</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 
 <!-- Firebase -->
 <script type="module">
@@ -567,10 +569,10 @@ td input:focus { border-bottom-color: var(--accent); }
           <!-- LEFT: 이미지 업로드 -->
           <div>
             <div class="upload-zone" id="uploadZone">
-              <input type="file" id="fileInput" accept="image/*" capture="environment">
+              <input type="file" id="fileInput" accept="image/*,.pdf" capture="environment">
               <div class="upload-icon">📄</div>
-              <div class="upload-main">사진 촬영 또는 파일 선택</div>
-              <div class="upload-sub">JPG, PNG, HEIC · 최대 10MB</div>
+              <div class="upload-main">사진 촬영, 파일 선택 또는 드래그&드롭</div>
+              <div class="upload-sub">JPG, PNG, HEIC, PDF · 최대 10MB</div>
             </div>
             <img id="previewImg" class="preview-img" alt="미리보기">
 
@@ -1233,9 +1235,21 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function handleFile(file) {
-  if (!file.type.startsWith('image/')) { showToast('이미지 파일만 가능합니다', 'error'); return; }
-  currentImageType = 'image/jpeg';
+  const isImage = file.type.startsWith('image/');
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
 
+  if (!isImage && !isPdf) {
+    showToast('이미지 또는 PDF 파일만 가능합니다', 'error');
+    return;
+  }
+
+  if (isPdf) {
+    handlePdfFile(file);
+    return;
+  }
+
+  // 이미지 처리
+  currentImageType = 'image/jpeg';
   compressImage(file, 1280, 0.8).then(({ base64, dataUrl }) => {
     currentImageBase64 = base64;
     const img = document.getElementById('previewImg');
@@ -1243,7 +1257,6 @@ function handleFile(file) {
     img.style.display = 'block';
     document.getElementById('analyzeBtn').disabled = false;
   }).catch(() => {
-    // 압축 실패 시 원본 사용
     const reader = new FileReader();
     reader.onload = e => {
       currentImageBase64 = e.target.result.split(',')[1];
@@ -1255,6 +1268,43 @@ function handleFile(file) {
     };
     reader.readAsDataURL(file);
   });
+}
+
+// PDF → 이미지 변환 (각 페이지를 이미지로 렌더링)
+async function handlePdfFile(file) {
+  setStatus('processing', 'PDF 변환 중...');
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const page = await pdf.getPage(1);
+
+    // 고해상도 렌더링 (scale 2.0)
+    const scale = 2.0;
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext('2d');
+
+    await page.render({ canvasContext: ctx, viewport }).promise;
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    currentImageBase64 = dataUrl.split(',')[1];
+    currentImageType = 'image/jpeg';
+
+    const img = document.getElementById('previewImg');
+    img.src = dataUrl;
+    img.style.display = 'block';
+    document.getElementById('analyzeBtn').disabled = false;
+    setStatus('success', 'PDF 변환 완료 (' + pdf.numPages + '페이지 중 1페이지)');
+
+    if (pdf.numPages > 1) {
+      showToast('PDF ' + pdf.numPages + '페이지 중 첫 번째 페이지가 로드되었습니다', 'info');
+    }
+  } catch(e) {
+    setStatus('error', 'PDF 변환 실패: ' + e.message);
+    showToast('PDF 변환 실패: ' + e.message, 'error');
+  }
 }
 
 // 이미지 압축 (413 에러 방지 - Vercel 4.5MB 제한)
