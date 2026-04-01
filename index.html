@@ -478,6 +478,20 @@ td input:focus { border-bottom-color: var(--accent); }
       <div class="auth-title">회원가입</div>
       <div class="auth-sub">병원 정보를 입력해주세요</div>
       <div class="form-group">
+        <label>이메일 <span style="color:var(--accent)">*</span></label>
+        <input type="email" id="regEmail" placeholder="hospital@example.com" onblur="checkEmailDuplicate()">
+        <span id="emailCheckResult" style="font-size:11px;margin-top:4px;display:block"></span>
+      </div>
+      <div class="form-group">
+        <label>비밀번호 <span style="color:var(--accent)">*</span></label>
+        <input type="password" id="regPassword" placeholder="8자 이상">
+      </div>
+      <div class="form-group">
+        <label>비밀번호 확인 <span style="color:var(--accent)">*</span></label>
+        <input type="password" id="regPasswordConfirm" placeholder="비밀번호 재입력">
+        <span id="pwMatchResult" style="font-size:11px;margin-top:4px;display:block"></span>
+      </div>
+      <div class="form-group">
         <label>병원명 <span style="color:var(--accent)">*</span></label>
         <input type="text" id="regHospital" placeholder="○○병원">
       </div>
@@ -493,19 +507,19 @@ td input:focus { border-bottom-color: var(--accent); }
         <label>핸드폰 번호 <span style="color:var(--accent)">*</span></label>
         <input type="tel" id="regPhone" placeholder="010-0000-0000" oninput="formatPhone(this)">
       </div>
-      <div class="form-group">
-        <label>이메일 <span style="color:var(--accent)">*</span></label>
-        <input type="email" id="regEmail" placeholder="hospital@example.com" onblur="checkEmailDuplicate()">
-        <span id="emailCheckResult" style="font-size:11px;margin-top:4px;display:block"></span>
-      </div>
-      <div class="form-group">
-        <label>비밀번호 <span style="color:var(--accent)">*</span></label>
-        <input type="password" id="regPassword" placeholder="8자 이상">
-      </div>
-      <div class="form-group">
-        <label>비밀번호 확인 <span style="color:var(--accent)">*</span></label>
-        <input type="password" id="regPasswordConfirm" placeholder="비밀번호 재입력">
-        <span id="pwMatchResult" style="font-size:11px;margin-top:4px;display:block"></span>
+      <div style="margin-bottom:16px">
+        <div class="checkbox-group">
+          <input type="checkbox" id="agreeTerms">
+          <label for="agreeTerms"><a onclick="showTermsModal('terms')" style="color:var(--accent);cursor:pointer;text-decoration:underline">이용약관</a> 동의 (필수)</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="agreePrivacy">
+          <label for="agreePrivacy"><a onclick="showTermsModal('privacy')" style="color:var(--accent);cursor:pointer;text-decoration:underline">개인정보처리방침</a> 동의 (필수)</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="agreeAll" onchange="toggleAgreeAll(this)">
+          <label for="agreeAll" style="font-weight:600">전체 동의</label>
+        </div>
       </div>
       <button class="btn btn-accent" onclick="register()">가입하기</button>
       <button class="btn btn-outline" onclick="showLogin()">로그인으로 돌아가기</button>
@@ -1020,7 +1034,22 @@ td input:focus { border-bottom-color: var(--accent); }
   </div>
 </div>
 
+<!-- TERMS MODAL -->
+<div class="modal-overlay" id="termsModal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-title" id="termsModalTitle">이용약관</div>
+    <div id="termsModalContent" style="font-size:12px;color:var(--text-muted);line-height:1.8;max-height:50vh;overflow-y:auto;white-space:pre-wrap"></div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-secondary" onclick="closeModal('termsModal')">닫기</button>
+    </div>
+  </div>
+</div>
+
 <script>
+const TERMS_TEXT = '닥터스캔Pro 이용약관\n\n제1조 (목적)\n본 약관은 주식회사 유노랩스(이하 "회사")가 제공하는 닥터스캔Pro 서비스(이하 "서비스")의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.\n\n제2조 (정의)\n1. "서비스"란 회사가 제공하는 거래명세서 자동 인식 및 관리 서비스를 말합니다.\n2. "이용자"란 본 약관에 따라 서비스를 이용하는 자를 말합니다.\n\n제3조 (약관의 효력)\n본 약관은 서비스 화면에 게시하거나 기타의 방법으로 이용자에게 공지함으로써 효력이 발생합니다.\n\n제4조 (서비스의 제공)\n1. 회사는 거래명세서 이미지 인식(OCR/AI) 서비스를 제공합니다.\n2. 회사는 서비스의 품질 향상을 위해 사전 공지 후 서비스 내용을 변경할 수 있습니다.\n\n제5조 (이용자의 의무)\n1. 이용자는 타인의 정보를 도용하여 서비스를 이용할 수 없습니다.\n2. 이용자는 서비스를 이용하여 법령에 위반되는 행위를 할 수 없습니다.\n\n제6조 (면책)\n1. 회사는 AI 분석 결과의 정확성을 보증하지 않으며, 이용자는 분석 결과를 반드시 확인 후 사용해야 합니다.\n2. 천재지변, 시스템 장애 등 불가항력으로 인한 서비스 중단에 대해 회사는 책임지지 않습니다.';
+
+const PRIVACY_TEXT = '개인정보처리방침\n\n주식회사 유노랩스(이하 "회사")는 이용자의 개인정보를 중요시하며, 개인정보보호법을 준수합니다.\n\n1. 수집하는 개인정보 항목\n- 필수: 이메일, 비밀번호, 병원명, 부서, 담당자명, 핸드폰번호\n- 자동수집: 서비스 이용기록, 접속 로그\n\n2. 개인정보의 수집 및 이용 목적\n- 회원 가입 및 관리\n- 서비스 제공 및 운영\n- 고객 문의 대응\n\n3. 개인정보의 보유 및 이용 기간\n- 회원 탈퇴 시까지 보유하며, 탈퇴 시 즉시 파기합니다.\n- 관계 법령에 의해 보존이 필요한 경우 해당 기간 동안 보관합니다.\n\n4. 개인정보의 제3자 제공\n- 회사는 이용자의 동의 없이 개인정보를 제3자에게 제공하지 않습니다.\n\n5. 개인정보의 파기\n- 보유 기간이 경과하거나 처리 목적이 달성된 경우 지체 없이 파기합니다.\n\n6. 개인정보 보호책임자\n- 성명: 이윤호 (대표이사)\n- 이메일: yunolabs.inc@gmail.com\n- 전화: 0504-050-0979\n\n7. 정보주체의 권리\n- 이용자는 언제든지 개인정보의 열람, 정정, 삭제, 처리정지를 요청할 수 있습니다.';
+
 // ─── STATE ────────────────────────────────────────────────
 let currentUser = null;
 let currentUserData = null;
@@ -1088,6 +1117,9 @@ async function register() {
   }
   if (pw.length < 8) { showToast('비밀번호는 8자 이상이어야 합니다', 'error'); return; }
   if (pw !== pwConfirm) { showToast('비밀번호가 일치하지 않습니다', 'error'); return; }
+  if (!document.getElementById('agreeTerms').checked || !document.getElementById('agreePrivacy').checked) {
+    showToast('이용약관 및 개인정보처리방침에 동의해주세요', 'error'); return;
+  }
 
   // 이메일 중복 확인
   try {
@@ -1109,6 +1141,17 @@ async function register() {
       showToast('가입 실패: ' + e.message, 'error');
     }
   }
+}
+
+function toggleAgreeAll(el) {
+  document.getElementById('agreeTerms').checked = el.checked;
+  document.getElementById('agreePrivacy').checked = el.checked;
+}
+
+function showTermsModal(type) {
+  document.getElementById('termsModalTitle').textContent = type === 'terms' ? '이용약관' : '개인정보처리방침';
+  document.getElementById('termsModalContent').textContent = type === 'terms' ? TERMS_TEXT : PRIVACY_TEXT;
+  document.getElementById('termsModal').classList.add('show');
 }
 
 function formatPhone(el) {
