@@ -154,6 +154,7 @@ header {
   font-family: 'Noto Sans KR', sans-serif; color: var(--text);
 }
 .nav-btn:hover .tooltip { opacity: 1; }
+.nav-label { display: none; font-size: 10px; font-family: 'Noto Sans KR', sans-serif; color: var(--text-muted); }
 .content { flex: 1; overflow-y: auto; }
 
 /* ── PANELS ── */
@@ -375,8 +376,9 @@ td input:focus { border-bottom-color: var(--accent); }
     border-right: none; border-bottom: 1px solid var(--border);
     padding: 6px 0; gap: 2px; order: -1;
   }
-  .nav-btn { width: 44px; height: 38px; font-size: 16px; }
+  .nav-btn { width: auto; height: auto; font-size: 16px; flex-direction: column; gap: 2px; padding: 6px 10px; border-radius: 8px; }
   .nav-btn .tooltip { display: none; }
+  .nav-label { display: block; }
 
   .content { height: auto; overflow-y: visible; }
   .panel { padding: 16px; }
@@ -515,19 +517,19 @@ td input:focus { border-bottom-color: var(--accent); }
     <!-- SIDEBAR -->
     <div class="sidebar">
       <button class="nav-btn active" onclick="showPanel('scan', this)" title="스캔">
-        📷<span class="tooltip">명세서 스캔</span>
+        📷<span class="nav-label">스캔</span><span class="tooltip">명세서 스캔</span>
       </button>
       <button class="nav-btn" onclick="showPanel('list', this)">
-        📋<span class="tooltip">명세서 목록</span>
+        📋<span class="nav-label">목록</span><span class="tooltip">명세서 목록</span>
       </button>
       <button class="nav-btn" onclick="showPanel('template', this)">
-        📐<span class="tooltip">양식 설정</span>
+        📐<span class="nav-label">양식</span><span class="tooltip">양식 설정</span>
       </button>
       <button class="nav-btn" onclick="showPanel('settings', this)">
-        👤<span class="tooltip">내 정보</span>
+        👤<span class="nav-label">정보</span><span class="tooltip">내 정보</span>
       </button>
       <button class="nav-btn admin-only" onclick="showPanel('admin', this)" style="display:none">
-        ⚙️<span class="tooltip">관리자</span>
+        ⚙️<span class="nav-label">관리</span><span class="tooltip">관리자</span>
       </button>
     </div>
 
@@ -1183,16 +1185,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function handleFile(file) {
   if (!file.type.startsWith('image/')) { showToast('이미지 파일만 가능합니다', 'error'); return; }
-  currentImageType = file.type;
-  const reader = new FileReader();
-  reader.onload = e => {
-    currentImageBase64 = e.target.result.split(',')[1];
+  currentImageType = 'image/jpeg';
+
+  compressImage(file, 1280, 0.8).then(({ base64, dataUrl }) => {
+    currentImageBase64 = base64;
     const img = document.getElementById('previewImg');
-    img.src = e.target.result;
+    img.src = dataUrl;
     img.style.display = 'block';
     document.getElementById('analyzeBtn').disabled = false;
-  };
-  reader.readAsDataURL(file);
+  }).catch(() => {
+    // 압축 실패 시 원본 사용
+    const reader = new FileReader();
+    reader.onload = e => {
+      currentImageBase64 = e.target.result.split(',')[1];
+      currentImageType = file.type;
+      const img = document.getElementById('previewImg');
+      img.src = e.target.result;
+      img.style.display = 'block';
+      document.getElementById('analyzeBtn').disabled = false;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// 이미지 압축 (413 에러 방지 - Vercel 4.5MB 제한)
+function compressImage(file, maxSize, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxSize || h > maxSize) {
+        const ratio = Math.min(maxSize / w, maxSize / h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      const base64 = dataUrl.split(',')[1];
+      resolve({ base64, dataUrl });
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
 }
 
 // ─── ANALYZE (Vercel 프록시 사용 → CORS 해결) ───────────
