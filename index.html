@@ -1871,9 +1871,9 @@ function renderInvoiceList(list) {
           '<div style="font-family:JetBrains Mono,monospace;font-weight:700;color:var(--accent);font-size:14px">' + (inv.totalAmount ? inv.totalAmount + '원' : '-') + '</div>' +
         '</div>' +
         '<div style="display:flex;gap:6px;margin-top:10px">' +
-          '<button class="btn-sm" onclick="editInvoice('' + inv.id + '')" style="flex:1">수정</button>' +
-          '<button class="btn-sm" onclick="deleteSingleInvoice('' + inv.id + '')" style="flex:1;color:#f87171;border-color:rgba(239,68,68,0.3)">삭제</button>' +
-          (inv.imageUrl ? '<button class="btn-sm" onclick="viewImage('' + inv.imageUrl + '')" style="flex:1">원본</button>' : '') +
+          '<button class="btn-sm" onclick="editInvoice(\'' + inv.id + '\')" style="flex:1">수정</button>' +
+          '<button class="btn-sm" onclick="deleteSingleInvoice(\'' + inv.id + '\')" style="flex:1;color:#f87171;border-color:rgba(239,68,68,0.3)">삭제</button>' +
+          (inv.imageUrl ? '<button class="btn-sm" onclick="viewImage(\'' + inv.imageUrl + '\')" style="flex:1">원본</button>' : '') +
         '</div>' +
       '</div>';
     }).join('');
@@ -1896,9 +1896,9 @@ function renderInvoiceList(list) {
       '<td style="font-family:JetBrains Mono,monospace;color:var(--accent)">' + (inv.totalAmount ? inv.totalAmount + '원' : '-') + '</td>' +
       '<td><span class="status-chip ' + (inv.status === 'confirmed' ? 'status-confirmed' : 'status-pending') + '">' + (inv.status === 'confirmed' ? '확정' : '검토중') + '</span></td>' +
       '<td style="white-space:nowrap">' +
-        '<button class="btn-sm" onclick="event.stopPropagation();editInvoice('' + inv.id + '')" style="margin-right:4px">수정</button>' +
-        '<button class="btn-sm" onclick="event.stopPropagation();deleteSingleInvoice('' + inv.id + '')" style="color:#f87171;border-color:rgba(239,68,68,0.3)">삭제</button>' +
-        (inv.imageUrl ? ' <button class="btn-sm" onclick="event.stopPropagation();viewImage('' + inv.imageUrl + '')">원본</button>' : '') +
+        '<button class="btn-sm" onclick="event.stopPropagation();editInvoice(\'' + inv.id + '\')" style="margin-right:4px">수정</button>' +
+        '<button class="btn-sm" onclick="event.stopPropagation();deleteSingleInvoice(\'' + inv.id + '\')" style="color:#f87171;border-color:rgba(239,68,68,0.3)">삭제</button>' +
+        (inv.imageUrl ? ' <button class="btn-sm" onclick="event.stopPropagation();viewImage(\'' + inv.imageUrl + '\')">원본</button>' : '') +
       '</td>' +
       '</tr>'
     ).join('');
