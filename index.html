@@ -1043,6 +1043,17 @@ td input:focus { border-bottom-color: var(--accent); }
   </div>
 </div>
 
+<!-- INVOICE DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal" style="max-width:700px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">📋 명세서 상세</div>
+    <div id="detailContent"></div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-secondary" onclick="closeModal('detailModal')">닫기</button>
+    </div>
+  </div>
+</div>
+
 <!-- DELETE ACCOUNT MODAL -->
 <div class="modal-overlay" id="deleteAccountModal">
   <div class="modal">
@@ -1768,7 +1779,7 @@ function renderInvoiceList(list) {
     return;
   }
   tbody.innerHTML = list.map(inv =>
-    '<tr>' +
+    '<tr onclick="showInvoiceDetail(\'' + inv.id + '\')" style="cursor:pointer">' +
     '<td onclick="event.stopPropagation()"><input type="checkbox" class="inv-check" value="' + inv.id + '" onchange="updateSelectionUI()" style="accent-color:var(--accent);cursor:pointer"></td>' +
     (admin ? '<td style="font-weight:500;font-size:11px">' + (inv.hospitalName || '—') + '</td>' : '') +
     '<td>' + (inv.date || '—') + '</td>' +
@@ -1826,8 +1837,9 @@ function sortInvoices(col) {
 }
 
 function setDateFilter(type, btn) {
-  const now = new Date();
-  const fmt = d => d.toISOString().slice(0, 10);
+  currentPage = 1;
+  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  const fmt = d => { var y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+dd; };
   let from = '', to = '';
 
   if (type === 'today') {
@@ -1863,8 +1875,13 @@ function filterInvoices() {
   const filtered = invoices.filter(inv => {
     if (vendor && !(inv.vendor || '').toLowerCase().includes(vendor)) return false;
     if (hospital && !(inv.hospitalName || '').toLowerCase().includes(hospital)) return false;
-    if (from && inv.date < from) return false;
-    if (to && inv.date > to) return false;
+    if (from || to) {
+      var invDate = inv.date || '';
+      var createdDate = inv.createdAt && inv.createdAt.toDate ? inv.createdAt.toDate().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).slice(0,10) : '';
+      var matchDate = (from ? invDate >= from : true) && (to ? invDate <= to : true);
+      var matchCreated = (from ? createdDate >= from : true) && (to ? createdDate <= to : true);
+      if (!matchDate && !matchCreated) return false;
+    }
     if (type && inv.type !== type) return false;
     return true;
   });
@@ -2430,6 +2447,48 @@ async function batchAnalyze() {
     setStatus('error', '분석 실패');
     showToast('분석에 실패했습니다', 'error');
   }
+}
+
+function showInvoiceDetail(id) {
+  var inv = invoices.find(function(i) { return i.id === id; });
+  if (!inv) return;
+  var items = inv.items || [];
+  var itemRows = items.map(function(item, i) {
+    return '<tr><td>' + (i+1) + '</td><td>' + (item.code||'') + '</td><td>' + (item.name||'') + '</td><td>' + (item.spec||'') + '</td><td>' + (item.unit||'') + '</td><td>' + (item.qty||'') + '</td><td>' + (item.unitPrice||'') + '</td><td>' + (item.unitPriceVat||'') + '</td><td>' + (item.amount||'') + '</td><td>' + (item.manufacturer||'') + '</td></tr>';
+  }).join('');
+
+  var createdStr = inv.createdAt && inv.createdAt.toDate ? inv.createdAt.toDate().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }) : '';
+
+  var html = '<div class="form-grid" style="border:1px solid var(--border);border-radius:8px;margin-bottom:12px">' +
+    '<div class="form-field"><div class="field-label">거래일자</div><div style="font-size:13px">' + (inv.date||'-') + '</div></div>' +
+    '<div class="form-field"><div class="field-label">명세서번호</div><div style="font-size:13px">' + (inv.docNo||'-') + '</div></div>' +
+    '<div class="form-field"><div class="field-label">공급업체명</div><div style="font-size:13px;font-weight:600">' + (inv.vendor||'-') + '</div></div>' +
+    '<div class="form-field"><div class="field-label">사업자번호</div><div style="font-size:13px">' + (inv.bizNo||'-') + '</div></div>' +
+    '<div class="form-field"><div class="field-label">담당자</div><div style="font-size:13px">' + (inv.contact||'-') + '</div></div>' +
+    '<div class="form-field"><div class="field-label">구분</div><div style="font-size:13px">' + (inv.type||'-') + '</div></div>' +
+    '<div class="form-field"><div class="field-label">결제조건</div><div style="font-size:13px">' + (inv.payment||'-') + '</div></div>' +
+    '<div class="form-field"><div class="field-label">저장일시</div><div style="font-size:13px">' + createdStr + '</div></div>' +
+    '</div>';
+
+  if (items.length) {
+    html += '<div style="font-size:12px;font-weight:600;margin-bottom:6px">품목 내역 (' + items.length + '건)</div>' +
+      '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:8px;margin-bottom:12px"><table style="min-width:600px"><thead><tr>' +
+      '<th>#</th><th>보험코드</th><th>품명</th><th>규격</th><th>단위</th><th>수량</th><th>단가</th><th>단가(VAT)</th><th>금액</th><th>제조사</th>' +
+      '</tr></thead><tbody>' + itemRows + '</tbody></table></div>';
+  }
+
+  html += '<div style="display:flex;gap:12px;padding:12px;background:var(--surface2);border-radius:8px;font-size:13px">' +
+    '<div>공급가액: <strong>' + (inv.supplyAmount||'0') + '</strong></div>' +
+    '<div>세액: <strong>' + (inv.vat||'0') + '</strong></div>' +
+    '<div style="color:var(--accent);font-weight:700">합계: ' + (inv.totalAmount||'0') + '원</div>' +
+    '</div>';
+
+  if (inv.imageUrl) {
+    html += '<div style="margin-top:12px"><img src="' + inv.imageUrl + '" style="max-width:100%;border-radius:8px;border:1px solid var(--border)" alt="명세서"></div>';
+  }
+
+  document.getElementById('detailContent').innerHTML = html;
+  document.getElementById('detailModal').classList.add('show');
 }
 
 function createThumbnail(base64, mediaType) {
