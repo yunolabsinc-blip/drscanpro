@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { imageBase64, imageType, apiKey, testOnly } = req.body || {};
+    const { imageBase64, imageType, apiKey, testOnly, images } = req.body || {};
     // 우선순위: 사용자 입력 키 > 서버 환경변수
     const trimmedKey = (apiKey || '').trim() || (process.env.ANTHROPIC_API_KEY || '').trim();
 
@@ -43,9 +43,14 @@ export default async function handler(req, res) {
     }
 
     // 일반 분석 모드
-    if (!imageBase64) {
+    if (!imageBase64 && (!images || !images.length)) {
       return res.status(400).json({ error: '이미지가 없습니다' });
     }
+
+    // 다중 이미지 또는 단일 이미지 content 블록 생성
+    const imageBlocks = images && images.length
+      ? images.map(img => ({ type: 'image', source: { type: 'base64', media_type: img.type || 'image/jpeg', data: img.base64 } }))
+      : [{ type: 'image', source: { type: 'base64', media_type: imageType || 'image/jpeg', data: imageBase64 } }];
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -60,13 +65,10 @@ export default async function handler(req, res) {
         messages: [{
           role: 'user',
           content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: imageType || 'image/jpeg', data: imageBase64 }
-            },
+            ...imageBlocks,
             {
               type: 'text',
-              text: '이 거래명세서(invoice) 이미지에서 모든 정보를 정확하게 추출하세요.\n\n규칙:\n- 숫자(수량, 단가, 금액)는 반드시 정확하게 읽을 것. 쉼표 제거 후 숫자만.\n- 보험코드/제품코드가 있으면 반드시 추출. 없으면 빈 문자열.\n- 제조사(manufacturer)가 있으면 반드시 추출.\n- 단가(unitPrice)는 VAT 불포함 가격, unitPriceVat는 VAT 포함 가격. 하나만 있으면 다른 하나를 계산(VAT 10%).\n- 모든 품목 행을 빠짐없이 추출할 것.\n- 합계금액이 명시되어 있으면 그대로 사용, 없으면 품목 합산.\n\nJSON 형식으로만 응답 (JSON 외 텍스트 없이):\n{"date":"YYYY-MM-DD","docNo":"문서번호","vendor":"공급업체명","bizNo":"사업자등록번호","contact":"담당자/연락처","type":"의약품 또는 의료기기","paymentTerms":"결제조건","items":[{"code":"보험코드/제품코드","name":"품명","spec":"규격","unit":"단위","qty":0,"unitPrice":0,"unitPriceVat":0,"amount":0,"manufacturer":"제조사"}],"supplyAmount":0,"vat":0,"totalAmount":0,"confidence":{"date":0.95,"docNo":0.9,"vendor":0.95,"bizNo":0.9,"contact":0.8,"items":0.95,"supplyAmount":0.95,"totalAmount":0.95}}'
+              text: '이 거래명세서(invoice) 이미지(여러 장일 수 있음)에서 모든 정보를 정확하게 추출하세요. 여러 페이지인 경우 하나의 명세서로 통합하세요.\n\n규칙:\n- 숫자(수량, 단가, 금액)는 반드시 정확하게 읽을 것. 쉼표 제거 후 숫자만.\n- 보험코드/제품코드가 있으면 반드시 추출. 없으면 빈 문자열.\n- 제조사(manufacturer)가 있으면 반드시 추출.\n- 단가(unitPrice)는 VAT 불포함 가격, unitPriceVat는 VAT 포함 가격. 하나만 있으면 다른 하나를 계산(VAT 10%).\n- 모든 품목 행을 빠짐없이 추출할 것.\n- 합계금액이 명시되어 있으면 그대로 사용, 없으면 품목 합산.\n\nJSON 형식으로만 응답 (JSON 외 텍스트 없이):\n{"date":"YYYY-MM-DD","docNo":"문서번호","vendor":"공급업체명","bizNo":"사업자등록번호","contact":"담당자/연락처","type":"의약품 또는 의료기기","paymentTerms":"결제조건","items":[{"code":"보험코드/제품코드","name":"품명","spec":"규격","unit":"단위","qty":0,"unitPrice":0,"unitPriceVat":0,"amount":0,"manufacturer":"제조사"}],"supplyAmount":0,"vat":0,"totalAmount":0,"confidence":{"date":0.95,"docNo":0.9,"vendor":0.95,"bizNo":0.9,"contact":0.8,"items":0.95,"supplyAmount":0.95,"totalAmount":0.95}}'
             }
           ]
         }]

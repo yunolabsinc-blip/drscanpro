@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8623c"/>
+      <stop offset="100%" style="stop-color:#4f8ef7"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="32" fill="#0f1117"/>
+  <rect x="16" y="16" width="160" height="160" rx="24" fill="url(#g)" opacity="0.15"/>
+  <text x="96" y="108" text-anchor="middle" font-size="80" fill="white">🏥</text>
+  <text x="96" y="160" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="22" fill="#e8623c">Dr.Scan</text>
+</svg>

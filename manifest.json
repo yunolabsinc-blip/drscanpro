@@ -1,0 +1,14 @@
+{
+  "name": "닥터스캔Pro",
+  "short_name": "닥터스캔",
+  "description": "병원 구매과 거래명세서 AI 자동화",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1117",
+  "theme_color": "#e8623c",
+  "orientation": "any",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
