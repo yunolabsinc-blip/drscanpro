@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>?ν꽣?ㅼ틪Pro ??蹂묒썝 援щℓ怨?嫄곕옒紐낆꽭???먮룞??/title>
+<title>닥터스캔Pro — 병원 구매과 거래명세서 자동화</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -16,7 +16,7 @@
   import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, doc, setDoc, getDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 
-  // ??? FIREBASE CONFIG ???????????????????
+  // ─── FIREBASE CONFIG ───────────────────
   const firebaseConfig = {
     apiKey: "AIzaSyB_9Jgm1_wLE8MOoxgTzZBHf6K4iRKx7bM",
     authDomain: "drscanpro.firebaseapp.com",
@@ -52,7 +52,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-/* ?? AUTH SCREEN ?? */
+/* ── AUTH SCREEN ── */
 .auth-screen {
   display: flex; align-items: center; justify-content: center;
   min-height: 100vh; padding: 20px;
@@ -105,7 +105,7 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: va
 .auth-switch { text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-muted); }
 .auth-switch a { color: var(--accent); cursor: pointer; text-decoration: none; }
 
-/* ?? MAIN APP ?? */
+/* ── MAIN APP ── */
 .app { display: none; flex-direction: column; min-height: 100vh; }
 header {
   display: flex; align-items: center; gap: 12px;
@@ -133,7 +133,7 @@ header {
 }
 .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
 
-/* ?? LAYOUT ?? */
+/* ── LAYOUT ── */
 .main-layout { display: flex; flex: 1; height: calc(100vh - 61px); }
 .sidebar {
   width: 56px; background: var(--surface); border-right: 1px solid var(--border);
@@ -160,7 +160,7 @@ header {
 .nav-label { display: none; font-size: 10px; font-family: 'Noto Sans KR', sans-serif; color: var(--text-muted); }
 .content { flex: 1; overflow-y: auto; }
 
-/* ?? PANELS ?? */
+/* ── PANELS ── */
 .panel { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; width: 100%; }
 .panel.active { display: block; }
 .panel-header {
@@ -170,7 +170,7 @@ header {
 .panel-title { font-size: 18px; font-weight: 700; }
 .panel-sub { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
 
-/* ?? SCAN PANEL ?? */
+/* ── SCAN PANEL ── */
 .scan-layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
 .upload-zone {
   border: 2px dashed var(--border); border-radius: var(--radius);
@@ -179,7 +179,7 @@ header {
   position: relative; margin-bottom: 14px;
 }
 .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(232,98,60,0.05); }
-.upload-zone input { display: none; }
+.upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
 .upload-icon { font-size: 36px; margin-bottom: 10px; }
 .upload-main { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
 .upload-sub { font-size: 12px; color: var(--text-muted); }
@@ -203,10 +203,10 @@ header {
 .sortable { cursor: pointer; user-select: none; }
 .sortable:hover { color: var(--accent); }
 .sort-icon::after { content: ''; margin-left: 2px; }
-.sort-icon.asc::after { content: ' ??; }
-.sort-icon.desc::after { content: ' ??; }
+.sort-icon.asc::after { content: ' ▲'; }
+.sort-icon.desc::after { content: ' ▼'; }
 
-/* ?? STATUS ?? */
+/* ── STATUS ── */
 .status-bar {
   padding: 10px 14px; border-radius: 8px; font-size: 12px;
   display: none; align-items: center; gap: 8px; margin-bottom: 14px;
@@ -217,7 +217,7 @@ header {
 .spinner { width: 14px; height: 14px; border: 2px solid rgba(79,142,247,0.3); border-top-color: var(--accent2); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ?? FORM ?? */
+/* ── FORM ── */
 .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; }
 .form-card-header {
   padding: 11px 16px; font-size: 11px; font-weight: 600;
@@ -249,7 +249,7 @@ header {
 .conf-mid { background: rgba(251,191,36,0.15); color: var(--warn); }
 .conf-low { background: rgba(239,68,68,0.15); color: #f87171; }
 
-/* ?? TABLE ?? */
+/* ── TABLE ── */
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 12px; }
 th {
@@ -272,7 +272,7 @@ td input:focus { border-bottom-color: var(--accent); }
 }
 .add-row-btn:hover { color: var(--accent); background: rgba(232,98,60,0.05); }
 
-/* ?? BOTTOM BAR ?? */
+/* ── BOTTOM BAR ── */
 .bottom-bar {
   padding: 14px 24px; border-top: 1px solid var(--border);
   display: flex; gap: 10px; align-items: center; background: var(--surface);
@@ -281,7 +281,7 @@ td input:focus { border-bottom-color: var(--accent); }
 .total-display { margin-left: auto; font-size: 12px; color: var(--text-muted); }
 .total-amount { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: var(--accent); margin-left: 8px; }
 
-/* ?? LIST PANEL ?? */
+/* ── LIST PANEL ── */
 .filter-bar {
   display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
 }
@@ -303,7 +303,7 @@ td input:focus { border-bottom-color: var(--accent); }
 .status-pending { background: rgba(251,191,36,0.15); color: var(--warn); }
 .status-confirmed { background: rgba(52,211,153,0.15); color: var(--success); }
 
-/* ?? TEMPLATE PANEL ?? */
+/* ── TEMPLATE PANEL ── */
 .template-upload {
   border: 2px dashed var(--border); border-radius: var(--radius);
   padding: 48px 20px; text-align: center; cursor: pointer;
@@ -322,13 +322,13 @@ td input:focus { border-bottom-color: var(--accent); }
   font-family: inherit; font-size: 12px; outline: none; width: 100%;
 }
 
-/* ?? SETTINGS PANEL ?? */
+/* ── SETTINGS PANEL ── */
 .settings-section { margin-bottom: 24px; }
 .settings-section-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 .settings-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
 .settings-card p { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
 
-/* ?? ADMIN PANEL ?? */
+/* ── ADMIN PANEL ── */
 .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
 .stat-card {
   background: var(--surface); border: 1px solid var(--border);
@@ -338,7 +338,7 @@ td input:focus { border-bottom-color: var(--accent); }
 .stat-value { font-size: 28px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--accent); }
 .stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 
-/* ?? TOAST ?? */
+/* ── TOAST ── */
 .toast {
   position: fixed; bottom: 24px; right: 24px; padding: 12px 18px;
   border-radius: 10px; font-size: 13px; font-weight: 500;
@@ -351,11 +351,11 @@ td input:focus { border-bottom-color: var(--accent); }
 .toast.info { background: var(--accent2); color: #fff; }
 @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-/* ?? EMPTY STATE ?? */
+/* ── EMPTY STATE ── */
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; gap: 10px; color: var(--text-muted); font-size: 13px; }
 .empty-state .icon { font-size: 40px; opacity: 0.4; }
 
-/* ?? MODAL ?? */
+/* ── MODAL ── */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
 .modal-overlay.show { display: flex; }
 .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 500px; max-width: calc(100vw - 40px); max-height: 80vh; overflow-y: auto; }
@@ -370,7 +370,7 @@ td input:focus { border-bottom-color: var(--accent); }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-/* ?? FOOTER ?? */
+/* ── FOOTER ── */
 .site-footer {
   background: var(--surface); border-top: 1px solid var(--border);
   padding: 28px 24px; text-align: center;
@@ -380,7 +380,7 @@ td input:focus { border-bottom-color: var(--accent); }
 .footer-divider { display: inline; margin: 0 8px; opacity: 0.4; }
 .footer-copy { margin-top: 10px; font-size: 10px; opacity: 0.6; }
 
-/* ?? MOBILE RESPONSIVE ?? */
+/* ── MOBILE RESPONSIVE ── */
 @media (max-width: 768px) {
   .auth-card { padding: 24px 20px; }
 
@@ -413,7 +413,8 @@ td input:focus { border-bottom-color: var(--accent); }
   .form-grid, #formContent { max-width: 100%; overflow-x: hidden; }
   .scan-layout > div { min-width: 0; max-width: 100%; }
   #formContent .form-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  td input { font-size: 16px !important; } /* iOS 以?諛⑹? */
+  .invoice-table table { min-width: 700px; }
+  td input { font-size: 16px !important; } /* iOS 줌 방지 */
 
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .stat-card { padding: 14px; }
@@ -431,7 +432,6 @@ td input:focus { border-bottom-color: var(--accent); }
   .mapping-arrow { display: none; }
 
   .invoice-table { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .invoice-table table { min-width: 700px; }
 
   .modal { padding: 20px; }
 }
@@ -439,201 +439,201 @@ td input:focus { border-bottom-color: var(--accent); }
 </head>
 <body>
 
-<!-- ?? AUTH SCREEN ?? -->
+<!-- ── AUTH SCREEN ── -->
 <div class="auth-screen" id="authScreen">
   <div class="auth-card">
     <div class="auth-logo">
-      <div class="auth-logo-icon">?룯</div>
-      <div class="auth-logo-text">?ν꽣?ㅼ틪<span>Pro</span></div>
+      <div class="auth-logo-icon">🏥</div>
+      <div class="auth-logo-text">닥터스캔<span>Pro</span></div>
     </div>
 
     <!-- LOGIN -->
     <div id="loginForm">
-      <div class="auth-title">濡쒓렇??/div>
-      <div class="auth-sub">蹂묒썝 援щℓ怨??대떦???꾩슜 ?쒕퉬??/div>
+      <div class="auth-title">로그인</div>
+      <div class="auth-sub">병원 구매과 담당자 전용 서비스</div>
       <div class="form-group">
-        <label>?대찓??/label>
+        <label>이메일</label>
         <input type="email" id="loginEmail" placeholder="hospital@example.com" onkeydown="if(event.key==='Enter')document.getElementById('loginPassword').focus()">
       </div>
       <div class="form-group">
-        <label>鍮꾨?踰덊샇</label>
-        <input type="password" id="loginPassword" placeholder="?™™™™™™™? onkeydown="if(event.key==='Enter')login()">
+        <label>비밀번호</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
       </div>
       <div class="checkbox-group">
         <input type="checkbox" id="rememberEmail">
-        <label for="rememberEmail">?꾩씠?????/label>
+        <label for="rememberEmail">아이디 저장</label>
       </div>
       <div class="checkbox-group">
         <input type="checkbox" id="autoLogin">
-        <label for="autoLogin">?먮룞 濡쒓렇??/label>
+        <label for="autoLogin">자동 로그인</label>
       </div>
-      <button class="btn btn-accent" onclick="login()">濡쒓렇??/button>
-      <button class="btn btn-outline" onclick="showRegister()">?뚯썝媛??/button>
+      <button class="btn btn-accent" onclick="login()">로그인</button>
+      <button class="btn btn-outline" onclick="showRegister()">회원가입</button>
       <div class="auth-links">
-        <a onclick="showFindEmail()">?대찓??李얘린</a>
-        <a onclick="showResetPassword()">鍮꾨?踰덊샇 李얘린</a>
+        <a onclick="showFindEmail()">이메일 찾기</a>
+        <a onclick="showResetPassword()">비밀번호 찾기</a>
       </div>
-      <div class="auth-switch">愿由ъ옄 <a onclick="showAdmin()">愿由ъ옄 濡쒓렇??/a></div>
+      <div class="auth-switch">관리자 <a onclick="showAdmin()">관리자 로그인</a></div>
     </div>
 
     <!-- REGISTER -->
     <div id="registerForm" style="display:none">
-      <div class="auth-title">?뚯썝媛??/div>
-      <div class="auth-sub">蹂묒썝 ?뺣낫瑜??낅젰?댁＜?몄슂</div>
+      <div class="auth-title">회원가입</div>
+      <div class="auth-sub">병원 정보를 입력해주세요</div>
       <div class="form-group">
-        <label>?대찓??<span style="color:var(--accent)">*</span></label>
+        <label>이메일 <span style="color:var(--accent)">*</span></label>
         <input type="email" id="regEmail" placeholder="hospital@example.com" onblur="checkEmailDuplicate()">
         <span id="emailCheckResult" style="font-size:11px;margin-top:4px;display:block"></span>
       </div>
       <div class="form-group">
-        <label>鍮꾨?踰덊샇 <span style="color:var(--accent)">*</span></label>
-        <input type="password" id="regPassword" placeholder="8???댁긽">
+        <label>비밀번호 <span style="color:var(--accent)">*</span></label>
+        <input type="password" id="regPassword" placeholder="8자 이상">
       </div>
       <div class="form-group">
-        <label>鍮꾨?踰덊샇 ?뺤씤 <span style="color:var(--accent)">*</span></label>
-        <input type="password" id="regPasswordConfirm" placeholder="鍮꾨?踰덊샇 ?ъ엯??>
+        <label>비밀번호 확인 <span style="color:var(--accent)">*</span></label>
+        <input type="password" id="regPasswordConfirm" placeholder="비밀번호 재입력">
         <span id="pwMatchResult" style="font-size:11px;margin-top:4px;display:block"></span>
       </div>
       <div class="form-group">
-        <label>蹂묒썝紐?<span style="color:var(--accent)">*</span></label>
-        <input type="text" id="regHospital" placeholder="?뗢뿃蹂묒썝">
+        <label>병원명 <span style="color:var(--accent)">*</span></label>
+        <input type="text" id="regHospital" placeholder="○○병원">
       </div>
       <div class="form-group">
-        <label>遺??<span style="color:var(--accent)">*</span></label>
-        <input type="text" id="regDept" placeholder="援щℓ怨?>
+        <label>부서 <span style="color:var(--accent)">*</span></label>
+        <input type="text" id="regDept" placeholder="구매과">
       </div>
       <div class="form-group">
-        <label>?대떦?먮챸 <span style="color:var(--accent)">*</span></label>
-        <input type="text" id="regName" placeholder="?띻만??>
+        <label>담당자명 <span style="color:var(--accent)">*</span></label>
+        <input type="text" id="regName" placeholder="홍길동">
       </div>
       <div class="form-group">
-        <label>?몃뱶??踰덊샇 <span style="color:var(--accent)">*</span></label>
+        <label>핸드폰 번호 <span style="color:var(--accent)">*</span></label>
         <input type="tel" id="regPhone" placeholder="010-0000-0000" oninput="formatPhone(this)">
       </div>
       <div style="margin-bottom:16px">
         <div class="checkbox-group">
           <input type="checkbox" id="agreeTerms">
-          <label for="agreeTerms"><a onclick="showTermsModal('terms')" style="color:var(--accent);cursor:pointer;text-decoration:underline">?댁슜?쎄?</a> ?숈쓽 (?꾩닔)</label>
+          <label for="agreeTerms"><a onclick="showTermsModal('terms')" style="color:var(--accent);cursor:pointer;text-decoration:underline">이용약관</a> 동의 (필수)</label>
         </div>
         <div class="checkbox-group">
           <input type="checkbox" id="agreePrivacy">
-          <label for="agreePrivacy"><a onclick="showTermsModal('privacy')" style="color:var(--accent);cursor:pointer;text-decoration:underline">媛쒖씤?뺣낫泥섎━諛⑹묠</a> ?숈쓽 (?꾩닔)</label>
+          <label for="agreePrivacy"><a onclick="showTermsModal('privacy')" style="color:var(--accent);cursor:pointer;text-decoration:underline">개인정보처리방침</a> 동의 (필수)</label>
         </div>
         <div class="checkbox-group">
           <input type="checkbox" id="agreeAll" onchange="toggleAgreeAll(this)">
-          <label for="agreeAll" style="font-weight:600">?꾩껜 ?숈쓽</label>
+          <label for="agreeAll" style="font-weight:600">전체 동의</label>
         </div>
       </div>
-      <button class="btn btn-accent" onclick="register()">媛?낇븯湲?/button>
-      <button class="btn btn-outline" onclick="showLogin()">濡쒓렇?몄쑝濡??뚯븘媛湲?/button>
+      <button class="btn btn-accent" onclick="register()">가입하기</button>
+      <button class="btn btn-outline" onclick="showLogin()">로그인으로 돌아가기</button>
     </div>
 
     <!-- FIND EMAIL -->
     <div id="findEmailForm" style="display:none">
-      <div class="auth-title">?대찓??李얘린</div>
-      <div class="auth-sub">媛?????낅젰???뺣낫瑜??낅젰?섏꽭??/div>
+      <div class="auth-title">이메일 찾기</div>
+      <div class="auth-sub">가입 시 입력한 정보를 입력하세요</div>
       <div class="form-group">
-        <label>蹂묒썝紐?/label>
-        <input type="text" id="findHospital" placeholder="?뗢뿃蹂묒썝">
+        <label>병원명</label>
+        <input type="text" id="findHospital" placeholder="○○병원">
       </div>
       <div class="form-group">
-        <label>?대떦?먮챸</label>
-        <input type="text" id="findName" placeholder="?띻만??>
+        <label>담당자명</label>
+        <input type="text" id="findName" placeholder="홍길동">
       </div>
       <div class="form-group">
-        <label>?몃뱶??踰덊샇</label>
+        <label>핸드폰 번호</label>
         <input type="tel" id="findPhone" placeholder="010-0000-0000" oninput="formatPhone(this)">
       </div>
       <div id="findEmailResult" style="display:none; padding:12px; background:var(--surface2); border-radius:8px; margin-bottom:16px; font-size:13px;"></div>
-      <button class="btn btn-accent" onclick="findEmail()">?대찓??李얘린</button>
-      <button class="btn btn-outline" onclick="showLogin()">濡쒓렇?몄쑝濡??뚯븘媛湲?/button>
+      <button class="btn btn-accent" onclick="findEmail()">이메일 찾기</button>
+      <button class="btn btn-outline" onclick="showLogin()">로그인으로 돌아가기</button>
     </div>
 
     <!-- RESET PASSWORD -->
     <div id="resetPasswordForm" style="display:none">
-      <div class="auth-title">鍮꾨?踰덊샇 李얘린</div>
-      <div class="auth-sub">媛???뺣낫 ?뺤씤 ??鍮꾨?踰덊샇 ?ъ꽕??留곹겕瑜?蹂대궡?쒕┰?덈떎</div>
+      <div class="auth-title">비밀번호 찾기</div>
+      <div class="auth-sub">가입 정보 확인 후 비밀번호 재설정 링크를 보내드립니다</div>
       <div class="form-group">
-        <label>?대떦?먮챸</label>
-        <input type="text" id="resetName" placeholder="?띻만??>
+        <label>담당자명</label>
+        <input type="text" id="resetName" placeholder="홍길동">
       </div>
       <div class="form-group">
-        <label>?대찓??/label>
+        <label>이메일</label>
         <input type="email" id="resetEmail" placeholder="hospital@example.com">
       </div>
       <div class="form-group">
-        <label>?몃뱶??踰덊샇</label>
+        <label>핸드폰 번호</label>
         <input type="tel" id="resetPhone" placeholder="010-0000-0000" oninput="formatPhone(this)">
       </div>
-      <button class="btn btn-accent" onclick="resetPassword()">?ъ꽕??硫붿씪 諛쒖넚</button>
-      <button class="btn btn-outline" onclick="showLogin()">濡쒓렇?몄쑝濡??뚯븘媛湲?/button>
+      <button class="btn btn-accent" onclick="resetPassword()">재설정 메일 발송</button>
+      <button class="btn btn-outline" onclick="showLogin()">로그인으로 돌아가기</button>
     </div>
   </div>
   <div class="site-footer" style="position:fixed;bottom:0;left:0;right:0">
-    <div class="footer-company">二쇱떇?뚯궗 ?좊끂?⑹뒪 (YUNOLABS.INC)</div>
-    ??쒖씠?? ?댁쑄??span class="footer-divider">|</span>?ъ뾽?먮벑濡앸쾲?? 824-88-03207<span class="footer-divider">|</span>?듭떊?먮ℓ?좉퀬: ??025-?ㅼ궛-0943??br>
-    二쇱냼: 寃쎄린???⑥뼇二쇱떆 ?ㅼ궛以묒븰濡?45踰덇만 15, 807??br>
-    怨좉컼?쇳꽣: 0504-050-0979<span class="footer-divider">|</span>?대찓?? yunolabs.inc@gmail.com
-    <div class="footer-copy">&copy; 2026 二쇱떇?뚯궗 ?좊끂?⑹뒪. All rights reserved.</div>
+    <div class="footer-company">주식회사 유노랩스 (YUNOLABS.INC)</div>
+    대표이사: 이윤호<span class="footer-divider">|</span>사업자등록번호: 824-88-03207<span class="footer-divider">|</span>통신판매신고: 제2025-다산-0943호<br>
+    주소: 경기도 남양주시 다산중앙로145번길 15, 807호<br>
+    고객센터: 0504-050-0979<span class="footer-divider">|</span>이메일: yunolabs.inc@gmail.com
+    <div class="footer-copy">&copy; 2026 주식회사 유노랩스. All rights reserved.</div>
   </div>
 </div>
 
-<!-- ?? MAIN APP ?? -->
+<!-- ── MAIN APP ── -->
 <div class="app" id="mainApp">
   <header>
-    <div class="logo-icon">?룯</div>
-    <div class="logo-text">?ν꽣?ㅼ틪<span>Pro</span></div>
+    <div class="logo-icon">🏥</div>
+    <div class="logo-text">닥터스캔<span>Pro</span></div>
     <div class="header-user">
-      <span class="user-badge" id="userBadge">濡쒕뵫以?..</span>
-      <button class="btn-sm" onclick="logout()">濡쒓렇?꾩썐</button>
+      <span class="user-badge" id="userBadge">로딩중...</span>
+      <button class="btn-sm" onclick="logout()">로그아웃</button>
     </div>
   </header>
 
   <div class="main-layout">
     <!-- SIDEBAR -->
     <div class="sidebar">
-      <button class="nav-btn active" onclick="showPanel('scan', this)" title="?ㅼ틪">
-        ?벜<span class="nav-label">?ㅼ틪</span><span class="tooltip">紐낆꽭???ㅼ틪</span>
+      <button class="nav-btn active" onclick="showPanel('scan', this)" title="스캔">
+        📷<span class="nav-label">스캔</span><span class="tooltip">명세서 스캔</span>
       </button>
       <button class="nav-btn" onclick="showPanel('list', this)">
-        ?뱥<span class="nav-label">紐⑸줉</span><span class="tooltip">紐낆꽭??紐⑸줉</span>
+        📋<span class="nav-label">목록</span><span class="tooltip">명세서 목록</span>
       </button>
       <button class="nav-btn" onclick="showPanel('template', this)">
-        ?뱪<span class="nav-label">?묒떇</span><span class="tooltip">?묒떇 ?ㅼ젙</span>
+        📐<span class="nav-label">양식</span><span class="tooltip">양식 설정</span>
       </button>
       <button class="nav-btn" onclick="showPanel('inquiry', this)">
-        ?뮠<span class="nav-label">臾몄쓽</span><span class="tooltip">臾몄쓽?섍린</span>
+        💬<span class="nav-label">문의</span><span class="tooltip">문의하기</span>
       </button>
       <button class="nav-btn" onclick="showPanel('settings', this)">
-        ?뫀<span class="nav-label">?뺣낫</span><span class="tooltip">???뺣낫</span>
+        👤<span class="nav-label">정보</span><span class="tooltip">내 정보</span>
       </button>
       <button class="nav-btn admin-only" onclick="showPanel('admin', this)" style="display:none">
-        ?숋툘<span class="nav-label">愿由?/span><span class="tooltip">愿由ъ옄</span>
+        ⚙️<span class="nav-label">관리</span><span class="tooltip">관리자</span>
       </button>
     </div>
 
     <!-- CONTENT -->
     <div class="content">
 
-      <!-- ?? SCAN PANEL ?? -->
+      <!-- ── SCAN PANEL ── -->
       <div class="panel active" id="panelScan">
         <div class="panel-header">
           <div>
-            <div class="panel-title">嫄곕옒紐낆꽭???ㅼ틪</div>
-            <div class="panel-sub">?ъ쭊??李띿쑝硫?AI媛 ?먮룞?쇰줈 ?곗씠?곕? ?낅젰?⑸땲??/div>
+            <div class="panel-title">거래명세서 스캔</div>
+            <div class="panel-sub">사진을 찍으면 AI가 자동으로 데이터를 입력합니다</div>
           </div>
         </div>
 
         <div class="scan-layout">
-          <!-- LEFT: ?대?吏 ?낅줈??-->
+          <!-- LEFT: 이미지 업로드 -->
           <div>
-            <input type="file" id="fileInput" accept="image/*,.pdf" multiple style="display:none">
             <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
-              <div class="upload-icon">?뱞</div>
-              <div class="upload-main">?ъ쭊 珥ъ쁺, ?뚯씪 ?좏깮 ?먮뒗 ?쒕옒洹??쒕∼</div>
-              <div class="upload-sub">JPG, PNG, HEIC, PDF 쨌 理쒕? 10MB</div>
+              <input type="file" id="fileInput" accept="image/*,.pdf" multiple style="display:none">
+              <div class="upload-icon">📄</div>
+              <div class="upload-main">사진 촬영, 파일 선택 또는 드래그&드롭</div>
+              <div class="upload-sub">JPG, PNG, HEIC, PDF · 최대 10MB</div>
             </div>
-            <img id="previewImg" class="preview-img" alt="誘몃━蹂닿린">
+            <img id="previewImg" class="preview-img" alt="미리보기">
 
             <div id="imageList" style="display:none;margin-bottom:14px">
               <div style="display:flex;gap:8px;overflow-x:auto;padding:4px 0" id="thumbnailStrip"></div>
@@ -647,102 +647,102 @@ td input:focus { border-bottom-color: var(--accent); }
 
             <div class="action-row">
               <button class="btn-primary" id="analyzeBtn" disabled onclick="analyze()">
-                ?뵇 AI 遺꾩꽍
+                🔍 AI 분석
               </button>
-              <button class="btn-secondary" onclick="clearScan()">珥덇린??/button>
+              <button class="btn-secondary" onclick="clearScan()">초기화</button>
             </div>
 
           </div>
 
-          <!-- RIGHT: ?곗씠???낅젰 -->
+          <!-- RIGHT: 데이터 입력 -->
           <div>
             <div id="formEmpty" class="empty-state">
-              <div class="icon">?뵇</div>
-              <div>嫄곕옒紐낆꽭?쒕? ?ㅼ틪?섎㈃<br>?먮룞?쇰줈 ?곗씠?곌? ?낅젰?⑸땲??/div>
+              <div class="icon">🔍</div>
+              <div>거래명세서를 스캔하면<br>자동으로 데이터가 입력됩니다</div>
             </div>
 
             <div id="formContent" style="display:none">
-              <!-- 湲곕낯 ?뺣낫 -->
+              <!-- 기본 정보 -->
               <div class="form-card">
-                <div class="form-card-header">?뱦 湲곕낯 ?뺣낫</div>
+                <div class="form-card-header">📌 기본 정보</div>
                 <div class="form-grid">
                   <div class="form-field">
-                    <div class="field-label">嫄곕옒?쇱옄 <span class="conf-badge" id="cf-date">??/span></div>
+                    <div class="field-label">거래일자 <span class="conf-badge" id="cf-date">—</span></div>
                     <input class="field-input" id="f-date" placeholder="YYYY-MM-DD">
                   </div>
                   <div class="form-field">
-                    <div class="field-label">紐낆꽭??踰덊샇 <span class="conf-badge" id="cf-docno">??/span></div>
-                    <input class="field-input" id="f-docno" placeholder="?먮룞 ?낅젰">
+                    <div class="field-label">명세서 번호 <span class="conf-badge" id="cf-docno">—</span></div>
+                    <input class="field-input" id="f-docno" placeholder="자동 입력">
                   </div>
                   <div class="form-field">
-                    <div class="field-label">怨듦툒?낆껜紐?<span class="conf-badge" id="cf-vendor">??/span></div>
-                    <input class="field-input" id="f-vendor" placeholder="?낆껜紐?>
+                    <div class="field-label">공급업체명 <span class="conf-badge" id="cf-vendor">—</span></div>
+                    <input class="field-input" id="f-vendor" placeholder="업체명">
                   </div>
                   <div class="form-field">
-                    <div class="field-label">?ъ뾽?먮쾲??<span class="conf-badge" id="cf-bizno">??/span></div>
+                    <div class="field-label">사업자번호 <span class="conf-badge" id="cf-bizno">—</span></div>
                     <input class="field-input" id="f-bizno" placeholder="000-00-00000">
                   </div>
                   <div class="form-field full">
-                    <div class="field-label">?대떦??<span class="conf-badge" id="cf-contact">??/span></div>
-                    <input class="field-input" id="f-contact" placeholder="?대떦?먮챸 / ?곕씫泥?>
+                    <div class="field-label">담당자 <span class="conf-badge" id="cf-contact">—</span></div>
+                    <input class="field-input" id="f-contact" placeholder="담당자명 / 연락처">
                   </div>
                 </div>
               </div>
 
-              <!-- 蹂묒썝 ?대? -->
+              <!-- 병원 내부 -->
               <div class="form-card">
-                <div class="form-card-header">?룯 蹂묒썝 ?대? 遺꾨쪟</div>
+                <div class="form-card-header">🏥 병원 내부 분류</div>
                 <div class="form-grid">
                   <div class="form-field">
-                    <div class="field-label">?섎졊 遺??/div>
-                    <input class="field-input" id="f-dept" placeholder="援щℓ怨?>
+                    <div class="field-label">수령 부서</div>
+                    <input class="field-input" id="f-dept" placeholder="구매과">
                   </div>
                   <div class="form-field">
-                    <div class="field-label">嫄곕옒 援щ텇</div>
-                    <input class="field-input" id="f-type" placeholder="?섏빟??/ ?섎즺湲곌린">
+                    <div class="field-label">거래 구분</div>
+                    <input class="field-input" id="f-type" placeholder="의약품 / 의료기기">
                   </div>
                   <div class="form-field">
-                    <div class="field-label">寃곗젣 議곌굔</div>
-                    <input class="field-input" id="f-payment" placeholder="?꾧툑 / ?몄긽">
+                    <div class="field-label">결제 조건</div>
+                    <input class="field-input" id="f-payment" placeholder="현금 / 외상">
                   </div>
                   <div class="form-field">
-                    <div class="field-label">?낃퀬 ?대떦??/div>
-                    <input class="field-input" id="f-receiver" placeholder="?대떦?먮챸">
+                    <div class="field-label">입고 담당자</div>
+                    <input class="field-input" id="f-receiver" placeholder="담당자명">
                   </div>
                 </div>
               </div>
 
-              <!-- ?덈ぉ -->
+              <!-- 품목 -->
               <div class="form-card">
-                <div class="form-card-header">?벀 ?덈ぉ ?댁뿭 <span class="conf-badge conf-mid" id="cf-items">??/span></div>
+                <div class="form-card-header">📦 품목 내역 <span class="conf-badge conf-mid" id="cf-items">—</span></div>
                 <div class="table-wrap">
                   <table>
                     <thead>
                       <tr>
-                        <th>#</th><th>蹂댄뿕肄붾뱶</th><th>?덈챸</th><th>洹쒓꺽</th><th>?⑥쐞</th>
-                        <th>?섎웾</th><th>?④?</th><th>?④?(VAT)</th><th>湲덉븸</th><th>?쒖“??/th>
+                        <th>#</th><th>보험코드</th><th>품명</th><th>규격</th><th>단위</th>
+                        <th>수량</th><th>단가</th><th>단가(VAT)</th><th>금액</th><th>제조사</th>
                       </tr>
                     </thead>
                     <tbody id="itemsBody"></tbody>
                   </table>
-                  <button class="add-row-btn" onclick="addItemRow()">+ ?덈ぉ 異붽?</button>
+                  <button class="add-row-btn" onclick="addItemRow()">+ 품목 추가</button>
                 </div>
               </div>
 
-              <!-- ?⑷퀎 -->
+              <!-- 합계 -->
               <div class="form-card">
-                <div class="form-card-header">?뮥 湲덉븸 ?⑷퀎</div>
+                <div class="form-card-header">💰 금액 합계</div>
                 <div class="form-grid">
                   <div class="form-field">
-                    <div class="field-label">怨듦툒媛??<span class="conf-badge" id="cf-supply">??/span></div>
+                    <div class="field-label">공급가액 <span class="conf-badge" id="cf-supply">—</span></div>
                     <input class="field-input" id="f-supply" placeholder="0">
                   </div>
                   <div class="form-field">
-                    <div class="field-label">?몄븸 (VAT)</div>
+                    <div class="field-label">세액 (VAT)</div>
                     <input class="field-input" id="f-vat" placeholder="0">
                   </div>
                   <div class="form-field full">
-                    <div class="field-label">?⑷퀎湲덉븸 <span class="conf-badge" id="cf-total">??/span></div>
+                    <div class="field-label">합계금액 <span class="conf-badge" id="cf-total">—</span></div>
                     <input class="field-input" id="f-total" placeholder="0" style="font-size:16px;font-weight:700;color:var(--accent)">
                   </div>
                 </div>
@@ -753,44 +753,44 @@ td input:focus { border-bottom-color: var(--accent); }
 
         <!-- BOTTOM BAR -->
         <div class="bottom-bar" id="bottomBar" style="display:none">
-          <button class="btn-secondary" onclick="exportExcel()">?뱿 ?묒? ???/button>
-          <button class="btn-primary" style="flex:none;width:auto;padding:10px 24px" onclick="saveInvoice()">?뮶 ???/button>
-          <div class="total-display">?⑷퀎 <span class="total-amount" id="totalDisplay">??/span></div>
+          <button class="btn-secondary" onclick="exportExcel()">📥 엑셀 저장</button>
+          <button class="btn-primary" style="flex:none;width:auto;padding:10px 24px" onclick="saveInvoice()">💾 저장</button>
+          <div class="total-display">합계 <span class="total-amount" id="totalDisplay">—</span></div>
         </div>
       </div>
 
-      <!-- ?? LIST PANEL ?? -->
+      <!-- ── LIST PANEL ── -->
       <div class="panel" id="panelList">
         <div class="panel-header">
           <div>
-            <div class="panel-title">紐낆꽭??紐⑸줉</div>
-            <div class="panel-sub">??λ맂 嫄곕옒紐낆꽭?쒕? 議고쉶?섍퀬 ?묒?濡??대낫?????덉뒿?덈떎</div>
+            <div class="panel-title">명세서 목록</div>
+            <div class="panel-sub">저장된 거래명세서를 조회하고 엑셀로 내보낼 수 있습니다</div>
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="btn-secondary" onclick="exportAllExcel()">?뱿 ?묒?</button>
-            <button class="btn-secondary" id="btnDeleteSelected" onclick="deleteSelectedInvoices()" style="display:none;color:#f87171;border-color:rgba(239,68,68,0.3)">?뿊 ?좏깮 ??젣</button>
-            <button class="btn-secondary" id="btnPrintSelected" onclick="printSelectedInvoices()" style="display:none">?뼥 異쒕젰</button>
+            <button class="btn-secondary" onclick="exportAllExcel()">📥 엑셀</button>
+            <button class="btn-secondary" id="btnDeleteSelected" onclick="deleteSelectedInvoices()" style="display:none;color:#f87171;border-color:rgba(239,68,68,0.3)">🗑 선택 삭제</button>
+            <button class="btn-secondary" id="btnPrintSelected" onclick="printSelectedInvoices()" style="display:none">🖨 출력</button>
           </div>
         </div>
 
         <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
-          <button class="btn-secondary date-quick" onclick="setDateFilter('today',this)" style="font-size:11px;padding:6px 12px">?뱀씪</button>
-          <button class="btn-secondary date-quick" onclick="setDateFilter('week',this)" style="font-size:11px;padding:6px 12px">?대쾲 二?/button>
-          <button class="btn-secondary date-quick" onclick="setDateFilter('lastweek',this)" style="font-size:11px;padding:6px 12px">吏??二?/button>
-          <button class="btn-secondary date-quick" onclick="setDateFilter('month',this)" style="font-size:11px;padding:6px 12px">?뱀썡</button>
-          <button class="btn-secondary date-quick" onclick="setDateFilter('all',this)" style="font-size:11px;padding:6px 12px">?꾩껜</button>
+          <button class="btn-secondary date-quick" onclick="setDateFilter('today',this)" style="font-size:11px;padding:6px 12px">당일</button>
+          <button class="btn-secondary date-quick" onclick="setDateFilter('week',this)" style="font-size:11px;padding:6px 12px">이번 주</button>
+          <button class="btn-secondary date-quick" onclick="setDateFilter('lastweek',this)" style="font-size:11px;padding:6px 12px">지난 주</button>
+          <button class="btn-secondary date-quick" onclick="setDateFilter('month',this)" style="font-size:11px;padding:6px 12px">당월</button>
+          <button class="btn-secondary date-quick" onclick="setDateFilter('all',this)" style="font-size:11px;padding:6px 12px">전체</button>
         </div>
         <div class="filter-bar">
-          <input class="filter-input" id="filterVendor" placeholder="?뵇 ?낆껜紐?/ 嫄곕옒泥섎챸 寃??>
-          <input class="filter-input" id="filterHospital" placeholder="?룯 蹂묒썝紐?寃?? style="display:none">
+          <input class="filter-input" id="filterVendor" placeholder="🔍 업체명 / 거래처명 검색">
+          <input class="filter-input" id="filterHospital" placeholder="🏥 병원명 검색" style="display:none">
           <input class="filter-input" type="date" id="filterFrom">
           <input class="filter-input" type="date" id="filterTo">
           <select class="filter-input" id="filterType">
-            <option value="">?꾩껜 援щ텇</option>
-            <option value="?섏빟??>?섏빟??/option>
-            <option value="?섎즺湲곌린">?섎즺湲곌린</option>
+            <option value="">전체 구분</option>
+            <option value="의약품">의약품</option>
+            <option value="의료기기">의료기기</option>
           </select>
-          <button class="btn-primary" onclick="currentPage=1;filterInvoices()" style="flex:none;padding:9px 20px;font-size:12px">寃??/button>
+          <button class="btn-primary" onclick="filterInvoices()" style="flex:none;padding:9px 20px;font-size:12px">검색</button>
         </div>
 
         <div class="invoice-table">
@@ -798,13 +798,13 @@ td input:focus { border-bottom-color: var(--accent); }
             <thead>
               <tr id="listTableHeader">
                 <th style="width:36px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" style="accent-color:var(--accent);cursor:pointer"></th>
-                <th class="sortable" onclick="sortInvoices('date')">嫄곕옒?쇱옄 <span class="sort-icon" data-col="date"></span></th>
-                <th class="sortable" onclick="sortInvoices('createdAt')">??μ떆媛?<span class="sort-icon" data-col="createdAt"></span></th>
-                <th class="sortable" onclick="sortInvoices('vendor')">?낆껜紐?<span class="sort-icon" data-col="vendor"></span></th>
-                <th>援щ텇</th>
-                <th class="sortable" onclick="sortInvoices('items')">?덈ぉ ??<span class="sort-icon" data-col="items"></span></th>
-                <th class="sortable" onclick="sortInvoices('totalAmount')">?⑷퀎湲덉븸 <span class="sort-icon" data-col="totalAmount"></span></th>
-                <th>?곹깭</th><th>愿由?/th>
+                <th class="sortable" onclick="sortInvoices('date')">거래일자 <span class="sort-icon" data-col="date"></span></th>
+                <th class="sortable" onclick="sortInvoices('createdAt')">저장시간 <span class="sort-icon" data-col="createdAt"></span></th>
+                <th class="sortable" onclick="sortInvoices('vendor')">업체명 <span class="sort-icon" data-col="vendor"></span></th>
+                <th>구분</th>
+                <th class="sortable" onclick="sortInvoices('items')">품목 수 <span class="sort-icon" data-col="items"></span></th>
+                <th class="sortable" onclick="sortInvoices('totalAmount')">합계금액 <span class="sort-icon" data-col="totalAmount"></span></th>
+                <th>상태</th><th>관리</th>
               </tr>
             </thead>
             <tbody id="invoiceListBody"></tbody>
@@ -812,181 +812,181 @@ td input:focus { border-bottom-color: var(--accent); }
         </div>
       </div>
 
-      <!-- ?? TEMPLATE PANEL ?? -->
+      <!-- ── TEMPLATE PANEL ── -->
       <div class="panel" id="panelTemplate">
         <div class="panel-header">
           <div>
-            <div class="panel-title">?묒떇 ?ㅼ젙</div>
-            <div class="panel-sub">蹂묒썝?먯꽌 ?ъ슜?섎뒗 ?묒? ?묒떇???낅줈?쒗븯硫??먮룞?쇰줈 而щ읆??留ㅽ븨?⑸땲??/div>
+            <div class="panel-title">양식 설정</div>
+            <div class="panel-sub">병원에서 사용하는 엑셀 양식을 업로드하면 자동으로 컬럼을 매핑합니다</div>
           </div>
         </div>
 
         <div class="template-upload" id="templateUpload">
           <input type="file" id="templateFile" accept=".xlsx,.xls,.csv" onchange="handleTemplate(this)">
-          <div style="font-size:40px;margin-bottom:12px">?뱤</div>
-          <div style="font-size:15px;font-weight:600;margin-bottom:6px">蹂묒썝 ?묒떇 ?묒? ?낅줈??/div>
-          <div style="font-size:12px;color:var(--text-muted)">.xlsx / .xls / .csv 吏??쨌 泥?踰덉㎏ ?됱씠 ?ㅻ뜑?ъ빞 ?⑸땲??/div>
+          <div style="font-size:40px;margin-bottom:12px">📊</div>
+          <div style="font-size:15px;font-weight:600;margin-bottom:6px">병원 양식 엑셀 업로드</div>
+          <div style="font-size:12px;color:var(--text-muted)">.xlsx / .xls / .csv 지원 · 첫 번째 행이 헤더여야 합니다</div>
         </div>
 
         <div id="mappingArea" style="display:none">
           <div style="font-size:14px;font-weight:600;margin-bottom:14px">
-            而щ읆 留ㅽ븨 ?ㅼ젙
-            <span style="font-size:12px;font-weight:400;color:var(--text-muted);margin-left:8px">?낅줈?쒕맂 ?묒떇??而щ읆???ν꽣?ㅼ틪Pro ?꾨뱶? ?곌껐?섏꽭??/span>
+            컬럼 매핑 설정
+            <span style="font-size:12px;font-weight:400;color:var(--text-muted);margin-left:8px">업로드된 양식의 컬럼을 닥터스캔Pro 필드와 연결하세요</span>
           </div>
           <div class="mapping-table" id="mappingTable"></div>
           <div style="margin-top:14px;display:flex;gap:8px">
-            <button class="btn-primary" style="flex:none;width:auto;padding:10px 24px" onclick="saveMapping()">留ㅽ븨 ???/button>
-            <button class="btn-secondary" onclick="resetTemplate()">珥덇린??/button>
+            <button class="btn-primary" style="flex:none;width:auto;padding:10px 24px" onclick="saveMapping()">매핑 저장</button>
+            <button class="btn-secondary" onclick="resetTemplate()">초기화</button>
           </div>
         </div>
 
         <div id="mappingSaved" style="display:none">
           <div class="form-card" style="margin-top:0">
-            <div class="form-card-header">???묒떇 留ㅽ븨 ?꾨즺</div>
+            <div class="form-card-header">✅ 양식 매핑 완료</div>
             <div style="padding:16px;font-size:13px;color:var(--text-muted)">
-              蹂묒썝 ?묒떇???ㅼ젙?섏뿀?듬땲?? 紐낆꽭???ㅼ틪 ???묒? ????????묒떇?쇰줈 ?대낫?낅땲??
-              <button class="btn-secondary" style="margin-top:12px;font-size:12px" onclick="resetTemplate()">?묒떇 ?ъ꽕??/button>
+              병원 양식이 설정되었습니다. 명세서 스캔 후 엑셀 저장 시 이 양식으로 내보냅니다.
+              <button class="btn-secondary" style="margin-top:12px;font-size:12px" onclick="resetTemplate()">양식 재설정</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ?? INQUIRY PANEL ?? -->
+      <!-- ── INQUIRY PANEL ── -->
       <div class="panel" id="panelInquiry">
         <div class="panel-header">
           <div>
-            <div class="panel-title">臾몄쓽?섍린</div>
-            <div class="panel-sub">愿由ъ옄?먭쾶 臾몄쓽?ы빆??蹂대궡硫??듬???諛쏆쓣 ???덉뒿?덈떎</div>
+            <div class="panel-title">문의하기</div>
+            <div class="panel-sub">관리자에게 문의사항을 보내면 답변을 받을 수 있습니다</div>
           </div>
         </div>
 
-        <!-- 臾몄쓽 ?묒꽦 -->
+        <!-- 문의 작성 -->
         <div class="form-card" style="margin-bottom:20px">
-          <div class="form-card-header">?뱷 ??臾몄쓽 ?묒꽦</div>
+          <div class="form-card-header">📝 새 문의 작성</div>
           <div style="padding:16px">
             <div class="form-group" style="margin-bottom:12px">
-              <label>?쒕ぉ</label>
-              <input type="text" id="inquiryTitle" placeholder="臾몄쓽 ?쒕ぉ???낅젰?섏꽭?? style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;outline:none">
+              <label>제목</label>
+              <input type="text" id="inquiryTitle" placeholder="문의 제목을 입력하세요" style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;outline:none">
             </div>
             <div class="form-group" style="margin-bottom:12px">
-              <label>?댁슜</label>
-              <textarea id="inquiryContent" placeholder="臾몄쓽 ?댁슜???낅젰?섏꽭?? rows="5" style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;outline:none;resize:vertical"></textarea>
+              <label>내용</label>
+              <textarea id="inquiryContent" placeholder="문의 내용을 입력하세요" rows="5" style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;outline:none;resize:vertical"></textarea>
             </div>
-            <button class="btn-primary" onclick="submitInquiry()" style="width:auto;padding:10px 24px">臾몄쓽 蹂대궡湲?/button>
+            <button class="btn-primary" onclick="submitInquiry()" style="width:auto;padding:10px 24px">문의 보내기</button>
           </div>
         </div>
 
-        <!-- 臾몄쓽 紐⑸줉 -->
+        <!-- 문의 목록 -->
         <div class="form-card">
-          <div class="form-card-header">?뱥 ??臾몄쓽 ?댁뿭</div>
+          <div class="form-card-header">📋 내 문의 내역</div>
           <div id="inquiryList" style="padding:16px">
-            <div style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px">臾몄쓽 ?댁뿭???놁뒿?덈떎</div>
+            <div style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px">문의 내역이 없습니다</div>
           </div>
         </div>
       </div>
 
-      <!-- ?? SETTINGS PANEL ?? -->
+      <!-- ── SETTINGS PANEL ── -->
       <div class="panel" id="panelSettings">
         <div class="panel-header">
           <div>
-            <div class="panel-title">???뺣낫</div>
-            <div class="panel-sub">怨꾩젙 ?뺣낫 ?뺤씤 諛?愿由?/div>
+            <div class="panel-title">내 정보</div>
+            <div class="panel-sub">계정 정보 확인 및 관리</div>
           </div>
         </div>
 
         <div class="settings-section">
-          <div class="settings-section-title">?뫀 怨꾩젙 ?뺣낫</div>
+          <div class="settings-section-title">👤 계정 정보</div>
           <div class="settings-card">
             <div class="form-grid" style="border:none">
               <div class="form-field">
-                <div class="field-label">蹂묒썝紐?/div>
-                <div id="settingsHospital" style="font-size:14px;font-weight:500;padding:4px 0">??/div>
+                <div class="field-label">병원명</div>
+                <div id="settingsHospital" style="font-size:14px;font-weight:500;padding:4px 0">—</div>
               </div>
               <div class="form-field">
-                <div class="field-label">?대떦?먮챸</div>
-                <div id="settingsName" style="font-size:14px;font-weight:500;padding:4px 0">??/div>
+                <div class="field-label">담당자명</div>
+                <div id="settingsName" style="font-size:14px;font-weight:500;padding:4px 0">—</div>
               </div>
               <div class="form-field full">
-                <div class="field-label">?대찓??/div>
-                <div id="settingsEmail" style="font-size:14px;font-weight:500;padding:4px 0">??/div>
+                <div class="field-label">이메일</div>
+                <div id="settingsEmail" style="font-size:14px;font-weight:500;padding:4px 0">—</div>
               </div>
             </div>
           </div>
         </div>
 
         <div class="settings-section">
-          <div class="settings-section-title">?뮥 API ?ㅼ젙</div>
+          <div class="settings-section-title">🔑 API 설정</div>
           <div class="settings-card">
-            <p style="margin-bottom:8px">AI 遺꾩꽍???ъ슜??Anthropic API ?곕? ?낅젰?섏꽭??. ?쒕쾭 ?숃같꺽蹂?닔媛 ?ㅼ젙?섏뼱 ?덈쑝硫??낅젰?섏? ?딆븘??맗?덈떎.</p>
+            <p style="margin-bottom:8px">AI 분석에 사용할 Anthropic API 키를 입력하세요. 서버 환경변수가 설정되어 있으면 입력하지 않아도 됩니다.</p>
             <div class="form-group">
               <label>Anthropic API Key</label>
               <input type="password" id="settingsApiKey" placeholder="sk-ant-..." style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;outline:none">
             </div>
             <div style="display:flex;gap:8px;margin-top:8px">
-              <button class="btn-primary" onclick="saveApiKey()" style="width:auto;padding:8px 20px;font-size:12px">???</button>
-              <button class="btn-secondary" onclick="testApiKey()" style="font-size:12px;padding:8px 20px">?곌넻 ?뚯뒪??/button>
+              <button class="btn-primary" onclick="saveApiKey()" style="width:auto;padding:8px 20px;font-size:12px">저장</button>
+              <button class="btn-secondary" onclick="testApiKey()" style="font-size:12px;padding:8px 20px">연동 테스트</button>
             </div>
             <div id="apiKeyStatus" style="font-size:11px;margin-top:8px"></div>
           </div>
         </div>
 
         <div class="settings-section">
-          <div class="settings-section-title">?좑툘 ?꾪뿕 援ъ뿭</div>
+          <div class="settings-section-title">⚠️ 위험 구역</div>
           <div class="settings-card" style="border-color:rgba(239,68,68,0.3)">
-            <p>?뚯썝 ?덊눜 ??紐⑤뱺 ?곗씠??紐낆꽭?? 怨꾩젙 ?뺣낫)媛 ?곴뎄?곸쑝濡???젣?⑸땲?? ???묒뾽? ?섎룎由????놁뒿?덈떎.</p>
-            <button class="btn btn-danger" style="width:auto;padding:10px 24px" onclick="showDeleteAccountModal()">?뚯썝 ?덊눜</button>
+            <p>회원 탈퇴 시 모든 데이터(명세서, 계정 정보)가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.</p>
+            <button class="btn btn-danger" style="width:auto;padding:10px 24px" onclick="showDeleteAccountModal()">회원 탈퇴</button>
           </div>
         </div>
       </div>
 
-      <!-- ?? ADMIN PANEL ?? -->
+      <!-- ── ADMIN PANEL ── -->
       <div class="panel" id="panelAdmin">
         <div class="panel-header">
           <div>
-            <div class="panel-title">愿由ъ옄 ??쒕낫??/div>
-            <div class="panel-sub">?꾩껜 蹂묒썝 ?꾪솴 諛??곗씠?곕? 議고쉶?⑸땲??/div>
+            <div class="panel-title">관리자 대시보드</div>
+            <div class="panel-sub">전체 병원 현황 및 데이터를 조회합니다</div>
           </div>
-          <button class="btn-secondary" onclick="exportAdminExcel()">?뱿 ?꾩껜 ?곗씠??異붿텧</button>
+          <button class="btn-secondary" onclick="exportAdminExcel()">📥 전체 데이터 추출</button>
         </div>
 
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-label">珥?蹂묒썝 ??/div>
-            <div class="stat-value" id="statHospitals">??/div>
-            <div class="stat-sub">媛??蹂묒썝</div>
+            <div class="stat-label">총 병원 수</div>
+            <div class="stat-value" id="statHospitals">—</div>
+            <div class="stat-sub">가입 병원</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">珥?紐낆꽭??/div>
-            <div class="stat-value" id="statInvoices">??/div>
-            <div class="stat-sub">?꾩껜 ?꾩쟻</div>
+            <div class="stat-label">총 명세서</div>
+            <div class="stat-value" id="statInvoices">—</div>
+            <div class="stat-sub">전체 누적</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">?대쾲 ??/div>
-            <div class="stat-value" id="statMonthly">??/div>
-            <div class="stat-sub">?붽컙 ?ㅼ틪 嫄댁닔</div>
+            <div class="stat-label">이번 달</div>
+            <div class="stat-value" id="statMonthly">—</div>
+            <div class="stat-sub">월간 스캔 건수</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">珥?嫄곕옒湲덉븸</div>
-            <div class="stat-value" id="statAmount">??/div>
-            <div class="stat-sub">?꾩쟻 ?⑷퀎</div>
+            <div class="stat-label">총 거래금액</div>
+            <div class="stat-value" id="statAmount">—</div>
+            <div class="stat-sub">누적 합계</div>
           </div>
         </div>
 
-        <!-- 愿由ъ옄 ??-->
+        <!-- 관리자 탭 -->
         <div style="display:flex;gap:8px;margin-bottom:16px">
-          <button class="btn-secondary admin-tab active" onclick="switchAdminTab('invoices',this)" style="font-size:12px;padding:8px 16px">?뱥 紐낆꽭??紐⑸줉</button>
-          <button class="btn-secondary admin-tab" onclick="switchAdminTab('users',this)" style="font-size:12px;padding:8px 16px">?뫁 ?ъ슜??紐⑸줉</button>
-          <button class="btn-secondary admin-tab" onclick="switchAdminTab('inquiries',this)" style="font-size:12px;padding:8px 16px">?뮠 臾몄쓽 愿由?/button>
+          <button class="btn-secondary admin-tab active" onclick="switchAdminTab('invoices',this)" style="font-size:12px;padding:8px 16px">📋 명세서 목록</button>
+          <button class="btn-secondary admin-tab" onclick="switchAdminTab('users',this)" style="font-size:12px;padding:8px 16px">👥 사용자 목록</button>
+          <button class="btn-secondary admin-tab" onclick="switchAdminTab('inquiries',this)" style="font-size:12px;padding:8px 16px">💬 문의 관리</button>
         </div>
 
-        <!-- 紐낆꽭??紐⑸줉 -->
+        <!-- 명세서 목록 -->
         <div id="adminInvoicesTab">
           <div class="invoice-table">
             <table>
               <thead>
                 <tr>
-                  <th>蹂묒썝紐?/th><th>嫄곕옒?쇱옄</th><th>?낆껜紐?/th>
-                  <th>援щ텇</th><th>?덈ぉ ??/th><th>?⑷퀎湲덉븸</th><th>?먮낯</th>
+                  <th>병원명</th><th>거래일자</th><th>업체명</th>
+                  <th>구분</th><th>품목 수</th><th>합계금액</th><th>원본</th>
                 </tr>
               </thead>
               <tbody id="adminListBody"></tbody>
@@ -994,14 +994,14 @@ td input:focus { border-bottom-color: var(--accent); }
           </div>
         </div>
 
-        <!-- ?ъ슜??紐⑸줉 -->
+        <!-- 사용자 목록 -->
         <div id="adminUsersTab" style="display:none">
           <div class="invoice-table">
             <table>
               <thead>
                 <tr>
-                  <th>蹂묒썝紐?/th><th>?대떦?먮챸</th><th>?대찓??/th>
-                  <th>媛?낆씪</th><th>紐낆꽭????/th><th>理쒓렐 嫄곕옒?낆껜</th>
+                  <th>병원명</th><th>담당자명</th><th>이메일</th>
+                  <th>가입일</th><th>명세서 수</th><th>최근 거래업체</th>
                 </tr>
               </thead>
               <tbody id="adminUsersBody"></tbody>
@@ -1009,20 +1009,20 @@ td input:focus { border-bottom-color: var(--accent); }
           </div>
         </div>
 
-        <!-- 臾몄쓽 愿由?-->
+        <!-- 문의 관리 -->
         <div id="adminInquiriesTab" style="display:none">
-          <div id="adminInquiryList" style="color:var(--text-muted);font-size:13px;text-align:center;padding:40px">臾몄쓽 ?댁뿭???놁뒿?덈떎</div>
+          <div id="adminInquiryList" style="color:var(--text-muted);font-size:13px;text-align:center;padding:40px">문의 내역이 없습니다</div>
         </div>
       </div>
 
     </div>
   </div>
   <div class="site-footer">
-    <div class="footer-company">二쇱떇?뚯궗 ?좊끂?⑹뒪 (YUNOLABS.INC)</div>
-    ??쒖씠?? ?댁쑄??span class="footer-divider">|</span>?ъ뾽?먮벑濡앸쾲?? 824-88-03207<span class="footer-divider">|</span>?듭떊?먮ℓ?좉퀬: ??025-?ㅼ궛-0943??br>
-    二쇱냼: 寃쎄린???⑥뼇二쇱떆 ?ㅼ궛以묒븰濡?45踰덇만 15, 807??br>
-    怨좉컼?쇳꽣: 0504-050-0979<span class="footer-divider">|</span>?대찓?? yunolabs.inc@gmail.com
-    <div class="footer-copy">&copy; 2026 二쇱떇?뚯궗 ?좊끂?⑹뒪. All rights reserved.</div>
+    <div class="footer-company">주식회사 유노랩스 (YUNOLABS.INC)</div>
+    대표이사: 이윤호<span class="footer-divider">|</span>사업자등록번호: 824-88-03207<span class="footer-divider">|</span>통신판매신고: 제2025-다산-0943호<br>
+    주소: 경기도 남양주시 다산중앙로145번길 15, 807호<br>
+    고객센터: 0504-050-0979<span class="footer-divider">|</span>이메일: yunolabs.inc@gmail.com
+    <div class="footer-copy">&copy; 2026 주식회사 유노랩스. All rights reserved.</div>
   </div>
 </div>
 
@@ -1032,10 +1032,10 @@ td input:focus { border-bottom-color: var(--accent); }
 <!-- IMAGE MODAL -->
 <div class="modal-overlay" id="imageModal">
   <div class="modal" style="max-width:700px">
-    <div class="modal-title">?먮낯 嫄곕옒紐낆꽭??/div>
-    <img id="modalImg" style="width:100%;border-radius:8px" alt="?먮낯">
+    <div class="modal-title">원본 거래명세서</div>
+    <img id="modalImg" style="width:100%;border-radius:8px" alt="원본">
     <div class="modal-actions">
-      <button class="modal-btn modal-btn-secondary" onclick="closeModal('imageModal')">?リ린</button>
+      <button class="modal-btn modal-btn-secondary" onclick="closeModal('imageModal')">닫기</button>
     </div>
   </div>
 </div>
@@ -1043,17 +1043,17 @@ td input:focus { border-bottom-color: var(--accent); }
 <!-- DELETE ACCOUNT MODAL -->
 <div class="modal-overlay" id="deleteAccountModal">
   <div class="modal">
-    <div class="modal-title">?좑툘 ?뚯썝 ?덊눜</div>
+    <div class="modal-title">⚠️ 회원 탈퇴</div>
     <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
-      ?뺣쭚濡??덊눜?섏떆寃좎뒿?덇퉴?<br>紐⑤뱺 紐낆꽭???곗씠?곗? 怨꾩젙 ?뺣낫媛 ?곴뎄?곸쑝濡???젣?⑸땲??
+      정말로 탈퇴하시겠습니까?<br>모든 명세서 데이터와 계정 정보가 영구적으로 삭제됩니다.
     </p>
     <div class="form-group">
-      <label>?뺤씤???꾪빐 鍮꾨?踰덊샇瑜??낅젰?섏꽭??/label>
-      <input type="password" id="deleteConfirmPassword" placeholder="鍮꾨?踰덊샇">
+      <label>확인을 위해 비밀번호를 입력하세요</label>
+      <input type="password" id="deleteConfirmPassword" placeholder="비밀번호">
     </div>
     <div class="modal-actions">
-      <button class="modal-btn modal-btn-secondary" onclick="closeModal('deleteAccountModal')">痍⑥냼</button>
-      <button class="modal-btn modal-btn-danger" onclick="deleteAccount()">?덊눜?섍린</button>
+      <button class="modal-btn modal-btn-secondary" onclick="closeModal('deleteAccountModal')">취소</button>
+      <button class="modal-btn modal-btn-danger" onclick="deleteAccount()">탈퇴하기</button>
     </div>
   </div>
 </div>
@@ -1061,20 +1061,20 @@ td input:focus { border-bottom-color: var(--accent); }
 <!-- TERMS MODAL -->
 <div class="modal-overlay" id="termsModal">
   <div class="modal" style="max-width:600px">
-    <div class="modal-title" id="termsModalTitle">?댁슜?쎄?</div>
+    <div class="modal-title" id="termsModalTitle">이용약관</div>
     <div id="termsModalContent" style="font-size:12px;color:var(--text-muted);line-height:1.8;max-height:50vh;overflow-y:auto;white-space:pre-wrap"></div>
     <div class="modal-actions">
-      <button class="modal-btn modal-btn-secondary" onclick="closeModal('termsModal')">?リ린</button>
+      <button class="modal-btn modal-btn-secondary" onclick="closeModal('termsModal')">닫기</button>
     </div>
   </div>
 </div>
 
 <script>
-const TERMS_TEXT = '?ν꽣?ㅼ틪Pro ?댁슜?쎄?\n\n??議?(紐⑹쟻)\n蹂??쎄?? 二쇱떇?뚯궗 ?좊끂?⑹뒪(?댄븯 "?뚯궗")媛 ?쒓났?섎뒗 ?ν꽣?ㅼ틪Pro ?쒕퉬???댄븯 "?쒕퉬??)???댁슜怨?愿?⑦븯???뚯궗? ?댁슜??媛꾩쓽 沅뚮━, ?섎Т 諛?梨낆엫?ы빆, 湲고? ?꾩슂???ы빆??洹쒖젙?⑥쓣 紐⑹쟻?쇰줈 ?⑸땲??\n\n??議?(?뺤쓽)\n1. "?쒕퉬??? ?뚯궗媛 ?쒓났?섎뒗 嫄곕옒紐낆꽭???먮룞 ?몄떇 諛?愿由??쒕퉬?ㅻ? 留먰빀?덈떎.\n2. "?댁슜??? 蹂??쎄????곕씪 ?쒕퉬?ㅻ? ?댁슜?섎뒗 ?먮? 留먰빀?덈떎.\n\n??議?(?쎄????⑤젰)\n蹂??쎄?? ?쒕퉬???붾㈃??寃뚯떆?섍굅??湲고???諛⑸쾿?쇰줈 ?댁슜?먯뿉寃?怨듭??⑥쑝濡쒖뜥 ?⑤젰??諛쒖깮?⑸땲??\n\n??議?(?쒕퉬?ㅼ쓽 ?쒓났)\n1. ?뚯궗??嫄곕옒紐낆꽭???대?吏 ?몄떇(OCR/AI) ?쒕퉬?ㅻ? ?쒓났?⑸땲??\n2. ?뚯궗???쒕퉬?ㅼ쓽 ?덉쭏 ?μ긽???꾪빐 ?ъ쟾 怨듭? ???쒕퉬???댁슜??蹂寃쏀븷 ???덉뒿?덈떎.\n\n??議?(?댁슜?먯쓽 ?섎Т)\n1. ?댁슜?먮뒗 ??몄쓽 ?뺣낫瑜??꾩슜?섏뿬 ?쒕퉬?ㅻ? ?댁슜?????놁뒿?덈떎.\n2. ?댁슜?먮뒗 ?쒕퉬?ㅻ? ?댁슜?섏뿬 踰뺣졊???꾨컲?섎뒗 ?됱쐞瑜??????놁뒿?덈떎.\n\n??議?(硫댁콉)\n1. ?뚯궗??AI 遺꾩꽍 寃곌낵???뺥솗?깆쓣 蹂댁쬆?섏? ?딆쑝硫? ?댁슜?먮뒗 遺꾩꽍 寃곌낵瑜?諛섎뱶???뺤씤 ???ъ슜?댁빞 ?⑸땲??\n2. 泥쒖옱吏蹂, ?쒖뒪???μ븷 ??遺덇???젰?쇰줈 ?명븳 ?쒕퉬??以묐떒??????뚯궗??梨낆엫吏吏 ?딆뒿?덈떎.';
+const TERMS_TEXT = '닥터스캔Pro 이용약관\n\n제1조 (목적)\n본 약관은 주식회사 유노랩스(이하 "회사")가 제공하는 닥터스캔Pro 서비스(이하 "서비스")의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.\n\n제2조 (정의)\n1. "서비스"란 회사가 제공하는 거래명세서 자동 인식 및 관리 서비스를 말합니다.\n2. "이용자"란 본 약관에 따라 서비스를 이용하는 자를 말합니다.\n\n제3조 (약관의 효력)\n본 약관은 서비스 화면에 게시하거나 기타의 방법으로 이용자에게 공지함으로써 효력이 발생합니다.\n\n제4조 (서비스의 제공)\n1. 회사는 거래명세서 이미지 인식(OCR/AI) 서비스를 제공합니다.\n2. 회사는 서비스의 품질 향상을 위해 사전 공지 후 서비스 내용을 변경할 수 있습니다.\n\n제5조 (이용자의 의무)\n1. 이용자는 타인의 정보를 도용하여 서비스를 이용할 수 없습니다.\n2. 이용자는 서비스를 이용하여 법령에 위반되는 행위를 할 수 없습니다.\n\n제6조 (면책)\n1. 회사는 AI 분석 결과의 정확성을 보증하지 않으며, 이용자는 분석 결과를 반드시 확인 후 사용해야 합니다.\n2. 천재지변, 시스템 장애 등 불가항력으로 인한 서비스 중단에 대해 회사는 책임지지 않습니다.';
 
-const PRIVACY_TEXT = '媛쒖씤?뺣낫泥섎━諛⑹묠\n\n二쇱떇?뚯궗 ?좊끂?⑹뒪(?댄븯 "?뚯궗")???댁슜?먯쓽 媛쒖씤?뺣낫瑜?以묒슂?쒗븯硫? 媛쒖씤?뺣낫蹂댄샇踰뺤쓣 以?섑빀?덈떎.\n\n1. ?섏쭛?섎뒗 媛쒖씤?뺣낫 ??ぉ\n- ?꾩닔: ?대찓?? 鍮꾨?踰덊샇, 蹂묒썝紐? 遺?? ?대떦?먮챸, ?몃뱶?곕쾲??n- ?먮룞?섏쭛: ?쒕퉬???댁슜湲곕줉, ?묒냽 濡쒓렇\n\n2. 媛쒖씤?뺣낫???섏쭛 諛??댁슜 紐⑹쟻\n- ?뚯썝 媛??諛?愿由?n- ?쒕퉬???쒓났 諛??댁쁺\n- 怨좉컼 臾몄쓽 ???n\n3. 媛쒖씤?뺣낫??蹂댁쑀 諛??댁슜 湲곌컙\n- ?뚯썝 ?덊눜 ?쒓퉴吏 蹂댁쑀?섎ŉ, ?덊눜 ??利됱떆 ?뚭린?⑸땲??\n- 愿怨?踰뺣졊???섑빐 蹂댁〈???꾩슂??寃쎌슦 ?대떦 湲곌컙 ?숈븞 蹂닿??⑸땲??\n\n4. 媛쒖씤?뺣낫???????쒓났\n- ?뚯궗???댁슜?먯쓽 ?숈쓽 ?놁씠 媛쒖씤?뺣낫瑜????먯뿉寃??쒓났?섏? ?딆뒿?덈떎.\n\n5. 媛쒖씤?뺣낫???뚭린\n- 蹂댁쑀 湲곌컙??寃쎄낵?섍굅??泥섎━ 紐⑹쟻???ъ꽦??寃쎌슦 吏泥??놁씠 ?뚭린?⑸땲??\n\n6. 媛쒖씤?뺣낫 蹂댄샇梨낆엫??n- ?깅챸: ?댁쑄??(??쒖씠??\n- ?대찓?? yunolabs.inc@gmail.com\n- ?꾪솕: 0504-050-0979\n\n7. ?뺣낫二쇱껜??沅뚮━\n- ?댁슜?먮뒗 ?몄젣?좎? 媛쒖씤?뺣낫???대엺, ?뺤젙, ??젣, 泥섎━?뺤?瑜??붿껌?????덉뒿?덈떎.';
+const PRIVACY_TEXT = '개인정보처리방침\n\n주식회사 유노랩스(이하 "회사")는 이용자의 개인정보를 중요시하며, 개인정보보호법을 준수합니다.\n\n1. 수집하는 개인정보 항목\n- 필수: 이메일, 비밀번호, 병원명, 부서, 담당자명, 핸드폰번호\n- 자동수집: 서비스 이용기록, 접속 로그\n\n2. 개인정보의 수집 및 이용 목적\n- 회원 가입 및 관리\n- 서비스 제공 및 운영\n- 고객 문의 대응\n\n3. 개인정보의 보유 및 이용 기간\n- 회원 탈퇴 시까지 보유하며, 탈퇴 시 즉시 파기합니다.\n- 관계 법령에 의해 보존이 필요한 경우 해당 기간 동안 보관합니다.\n\n4. 개인정보의 제3자 제공\n- 회사는 이용자의 동의 없이 개인정보를 제3자에게 제공하지 않습니다.\n\n5. 개인정보의 파기\n- 보유 기간이 경과하거나 처리 목적이 달성된 경우 지체 없이 파기합니다.\n\n6. 개인정보 보호책임자\n- 성명: 이윤호 (대표이사)\n- 이메일: yunolabs.inc@gmail.com\n- 전화: 0504-050-0979\n\n7. 정보주체의 권리\n- 이용자는 언제든지 개인정보의 열람, 정정, 삭제, 처리정지를 요청할 수 있습니다.';
 
-// ??? STATE ????????????????????????????????????????????????
+// ─── STATE ────────────────────────────────────────────────
 let currentUser = null;
 let currentUserData = null;
 let currentImageBase64 = null;
@@ -1085,7 +1085,7 @@ let invoices = [];
 let templateMapping = JSON.parse(localStorage.getItem('drscanpro_mapping') || 'null');
 const ADMIN_EMAIL = 'yunolabs.inc@gmail.com';
 
-// ??? FIREBASE WAIT ????????????????????????????????????????
+// ─── FIREBASE WAIT ────────────────────────────────────────
 function waitFirebase() {
   return new Promise(resolve => {
     const check = setInterval(() => {
@@ -1094,14 +1094,15 @@ function waitFirebase() {
   });
 }
 
-// ??? AUTH ?????????????????????????????????????????????????
+// ─── AUTH ─────────────────────────────────────────────────
 async function login() {
   const fb = await waitFirebase();
   const email = document.getElementById('loginEmail').value.trim();
   const pw = document.getElementById('loginPassword').value;
-  if (!email || !pw) { showToast('?대찓?쇨낵 鍮꾨?踰덊샇瑜??낅젰?섏꽭??, 'error'); return; }
+  if (!email || !pw) { showToast('이메일과 비밀번호를 입력하세요', 'error'); return; }
 
-  // ?꾩씠?????  if (document.getElementById('rememberEmail').checked) {
+  // 아이디 저장
+  if (document.getElementById('rememberEmail').checked) {
     localStorage.setItem('drscanpro_savedEmail', email);
     localStorage.setItem('drscanpro_rememberEmail', 'true');
   } else {
@@ -1109,12 +1110,12 @@ async function login() {
     localStorage.removeItem('drscanpro_rememberEmail');
   }
 
-  // ?먮룞 濡쒓렇???ㅼ젙
+  // 자동 로그인 설정
   const autoLogin = document.getElementById('autoLogin').checked;
   localStorage.setItem('drscanpro_autoLogin', autoLogin ? 'true' : 'false');
 
   try {
-    // ?몄뀡 ?좎? 諛⑹떇 ?ㅼ젙
+    // 세션 유지 방식 설정
     if (autoLogin) {
       await fb.setPersistence(fb.auth, fb.browserLocalPersistence);
     } else {
@@ -1122,7 +1123,7 @@ async function login() {
     }
     await fb.signInWithEmailAndPassword(fb.auth, email, pw);
   } catch(e) {
-    showToast('濡쒓렇???ㅽ뙣: ' + (e.code === 'auth/invalid-credential' ? '?대찓???먮뒗 鍮꾨?踰덊샇 ?ㅻ쪟' : e.message), 'error');
+    showToast('로그인 실패: ' + (e.code === 'auth/invalid-credential' ? '이메일 또는 비밀번호 오류' : e.message), 'error');
   }
 }
 
@@ -1137,19 +1138,19 @@ async function register() {
   const pwConfirm = document.getElementById('regPasswordConfirm').value;
 
   if (!hospital || !dept || !name || !phone || !email || !pw) {
-    showToast('紐⑤뱺 ??ぉ???낅젰?섏꽭??, 'error'); return;
+    showToast('모든 항목을 입력하세요', 'error'); return;
   }
-  if (pw.length < 8) { showToast('鍮꾨?踰덊샇??8???댁긽?댁뼱???⑸땲??, 'error'); return; }
-  if (pw !== pwConfirm) { showToast('鍮꾨?踰덊샇媛 ?쇱튂?섏? ?딆뒿?덈떎', 'error'); return; }
+  if (pw.length < 8) { showToast('비밀번호는 8자 이상이어야 합니다', 'error'); return; }
+  if (pw !== pwConfirm) { showToast('비밀번호가 일치하지 않습니다', 'error'); return; }
   if (!document.getElementById('agreeTerms').checked || !document.getElementById('agreePrivacy').checked) {
-    showToast('?댁슜?쎄? 諛?媛쒖씤?뺣낫泥섎━諛⑹묠???숈쓽?댁＜?몄슂', 'error'); return;
+    showToast('이용약관 및 개인정보처리방침에 동의해주세요', 'error'); return;
   }
 
-  // ?대찓??以묐났 ?뺤씤
+  // 이메일 중복 확인
   try {
     const q = fb.query(fb.collection(fb.db, 'users'), fb.where('email', '==', email));
     const snap = await fb.getDocs(q);
-    if (!snap.empty) { showToast('?대? 媛?낅맂 ?대찓?쇱엯?덈떎', 'error'); return; }
+    if (!snap.empty) { showToast('이미 가입된 이메일입니다', 'error'); return; }
   } catch(e) {}
 
   try {
@@ -1157,12 +1158,12 @@ async function register() {
     await fb.setDoc(fb.doc(fb.db, 'users', cred.user.uid), {
       hospitalName: hospital, dept, name, phone, email, role: 'hospital', createdAt: fb.serverTimestamp()
     });
-    showToast('媛???꾨즺! ?섏쁺?⑸땲??, 'success');
+    showToast('가입 완료! 환영합니다', 'success');
   } catch(e) {
     if (e.code === 'auth/email-already-in-use') {
-      showToast('?대? 媛?낅맂 ?대찓?쇱엯?덈떎', 'error');
+      showToast('이미 가입된 이메일입니다', 'error');
     } else {
-      showToast('媛???ㅽ뙣: ' + e.message, 'error');
+      showToast('가입 실패: ' + e.message, 'error');
     }
   }
 }
@@ -1173,7 +1174,7 @@ function toggleAgreeAll(el) {
 }
 
 function showTermsModal(type) {
-  document.getElementById('termsModalTitle').textContent = type === 'terms' ? '?댁슜?쎄?' : '媛쒖씤?뺣낫泥섎━諛⑹묠';
+  document.getElementById('termsModalTitle').textContent = type === 'terms' ? '이용약관' : '개인정보처리방침';
   document.getElementById('termsModalContent').textContent = type === 'terms' ? TERMS_TEXT : PRIVACY_TEXT;
   document.getElementById('termsModal').classList.add('show');
 }
@@ -1195,10 +1196,10 @@ async function checkEmailDuplicate() {
     const q = fb.query(fb.collection(fb.db, 'users'), fb.where('email', '==', email));
     const snap = await fb.getDocs(q);
     if (snap.empty) {
-      result.textContent = '?ъ슜 媛?ν븳 ?대찓?쇱엯?덈떎';
+      result.textContent = '사용 가능한 이메일입니다';
       result.style.color = 'var(--success)';
     } else {
-      result.textContent = '?대? 媛?낅맂 ?대찓?쇱엯?덈떎';
+      result.textContent = '이미 가입된 이메일입니다';
       result.style.color = '#f87171';
     }
   } catch(e) { result.textContent = ''; }
@@ -1209,13 +1210,13 @@ async function logout() {
   await fb.signOut(fb.auth);
 }
 
-// ??? ?대찓??李얘린 ?????????????????????????????????????????
+// ─── 이메일 찾기 ─────────────────────────────────────────
 async function findEmail() {
   const fb = await waitFirebase();
   const hospital = document.getElementById('findHospital').value.trim();
   const name = document.getElementById('findName').value.trim();
   const phone = document.getElementById('findPhone').value.trim();
-  if (!hospital || !name || !phone) { showToast('紐⑤뱺 ??ぉ???낅젰?섏꽭??, 'error'); return; }
+  if (!hospital || !name || !phone) { showToast('모든 항목을 입력하세요', 'error'); return; }
 
   try {
     const q = fb.query(fb.collection(fb.db, 'users'), fb.where('hospitalName', '==', hospital), fb.where('name', '==', name));
@@ -1223,7 +1224,7 @@ async function findEmail() {
     const resultDiv = document.getElementById('findEmailResult');
     resultDiv.style.display = 'block';
 
-    // ?몃뱶??踰덊샇 留ㅼ묶 ?뺤씤
+    // 핸드폰 번호 매칭 확인
     const matched = snap.docs.filter(d => {
       const userPhone = (d.data().phone || '').replace(/[^0-9]/g, '');
       const inputPhone = phone.replace(/[^0-9]/g, '');
@@ -1231,7 +1232,7 @@ async function findEmail() {
     });
 
     if (!matched.length) {
-      resultDiv.innerHTML = '<span style="color:#f87171">?쇱튂?섎뒗 怨꾩젙??李얠쓣 ???놁뒿?덈떎.</span>';
+      resultDiv.innerHTML = '<span style="color:#f87171">일치하는 계정을 찾을 수 없습니다.</span>';
     } else {
       const emails = matched.map(d => {
         const email = d.data().email;
@@ -1239,23 +1240,23 @@ async function findEmail() {
         const masked = local.substring(0, 2) + '***@' + domain;
         return masked;
       });
-      resultDiv.innerHTML = '<span style="color:var(--success)">媛?낅맂 ?대찓?? ' + emails.join(', ') + '</span>';
+      resultDiv.innerHTML = '<span style="color:var(--success)">가입된 이메일: ' + emails.join(', ') + '</span>';
     }
   } catch(e) {
-    showToast('議고쉶 ?ㅽ뙣: ' + e.message, 'error');
+    showToast('조회 실패: ' + e.message, 'error');
   }
 }
 
-// ??? 鍮꾨?踰덊샇 李얘린 ???????????????????????????????????????
+// ─── 비밀번호 찾기 ───────────────────────────────────────
 async function resetPassword() {
   const fb = await waitFirebase();
   const name = document.getElementById('resetName').value.trim();
   const email = document.getElementById('resetEmail').value.trim();
   const phone = document.getElementById('resetPhone').value.trim();
-  if (!name || !email || !phone) { showToast('紐⑤뱺 ??ぉ???낅젰?섏꽭??, 'error'); return; }
+  if (!name || !email || !phone) { showToast('모든 항목을 입력하세요', 'error'); return; }
 
   try {
-    // ?대쫫+?대찓???꾪솕踰덊샇 ?쇱튂 ?뺤씤
+    // 이름+이메일+전화번호 일치 확인
     const q = fb.query(fb.collection(fb.db, 'users'), fb.where('email', '==', email), fb.where('name', '==', name));
     const snap = await fb.getDocs(q);
     const matched = snap.docs.filter(d => {
@@ -1265,19 +1266,19 @@ async function resetPassword() {
     });
 
     if (!matched.length) {
-      showToast('?낅젰???뺣낫? ?쇱튂?섎뒗 怨꾩젙???놁뒿?덈떎', 'error');
+      showToast('입력한 정보와 일치하는 계정이 없습니다', 'error');
       return;
     }
 
     await fb.sendPasswordResetEmail(fb.auth, email);
-    showToast('鍮꾨?踰덊샇 ?ъ꽕??硫붿씪??諛쒖넚?덉뒿?덈떎. 硫붿씪?⑥쓣 ?뺤씤?섏꽭??', 'success');
+    showToast('비밀번호 재설정 메일을 발송했습니다. 메일함을 확인하세요.', 'success');
     setTimeout(() => showLogin(), 2000);
   } catch(e) {
-    showToast('諛쒖넚 ?ㅽ뙣: ' + e.message, 'error');
+    showToast('발송 실패: ' + e.message, 'error');
   }
 }
 
-// ??? ?뚯썝 ?덊눜 ???????????????????????????????????????????
+// ─── 회원 탈퇴 ───────────────────────────────────────────
 function showDeleteAccountModal() {
   document.getElementById('deleteConfirmPassword').value = '';
   document.getElementById('deleteAccountModal').classList.add('show');
@@ -1286,52 +1287,53 @@ function showDeleteAccountModal() {
 async function deleteAccount() {
   const fb = await waitFirebase();
   const pw = document.getElementById('deleteConfirmPassword').value;
-  if (!pw) { showToast('鍮꾨?踰덊샇瑜??낅젰?섏꽭??, 'error'); return; }
+  if (!pw) { showToast('비밀번호를 입력하세요', 'error'); return; }
 
   try {
-    // ?ъ씤利?    const email = currentUser.email;
+    // 재인증
+    const email = currentUser.email;
     await fb.signInWithEmailAndPassword(fb.auth, email, pw);
 
-    // 1. ?ъ슜?먯쓽 紐낆꽭????젣
+    // 1. 사용자의 명세서 삭제
     const q = fb.query(fb.collection(fb.db, 'invoices'), fb.where('hospitalId', '==', currentUser.uid));
     const snap = await fb.getDocs(q);
     const deletePromises = snap.docs.map(d => fb.deleteDoc(fb.doc(fb.db, 'invoices', d.id)));
     await Promise.all(deletePromises);
 
-    // 2. ?ъ슜??臾몄꽌 ??젣
+    // 2. 사용자 문서 삭제
     await fb.deleteDoc(fb.doc(fb.db, 'users', currentUser.uid));
 
-    // 3. Firebase Auth ?ъ슜????젣
+    // 3. Firebase Auth 사용자 삭제
     await fb.deleteUser(currentUser);
 
-    // 4. 濡쒖뺄 ?곗씠???뺣━
+    // 4. 로컬 데이터 정리
     localStorage.removeItem('drscanpro_apikey');
     localStorage.removeItem('drscanpro_mapping');
     localStorage.removeItem('drscanpro_autoLogin');
 
     closeModal('deleteAccountModal');
-    showToast('?뚯썝 ?덊눜媛 ?꾨즺?섏뿀?듬땲??, 'info');
+    showToast('회원 탈퇴가 완료되었습니다', 'info');
   } catch(e) {
     if (e.code === 'auth/invalid-credential') {
-      showToast('鍮꾨?踰덊샇媛 ?щ컮瑜댁? ?딆뒿?덈떎', 'error');
+      showToast('비밀번호가 올바르지 않습니다', 'error');
     } else {
-      showToast('?덊눜 ?ㅽ뙣: ' + e.message, 'error');
+      showToast('탈퇴 실패: ' + e.message, 'error');
     }
   }
 }
 
-// ??? AUTH STATE ???????????????????????????????????????????
+// ─── AUTH STATE ───────────────────────────────────────────
 async function initAuth() {
   const fb = await waitFirebase();
 
-  // ?꾩씠?????蹂듭썝
+  // 아이디 저장 복원
   if (localStorage.getItem('drscanpro_rememberEmail') === 'true') {
     const savedEmail = localStorage.getItem('drscanpro_savedEmail');
     if (savedEmail) document.getElementById('loginEmail').value = savedEmail;
     document.getElementById('rememberEmail').checked = true;
   }
 
-  // ?먮룞 濡쒓렇??泥댄겕諛뺤뒪 蹂듭썝
+  // 자동 로그인 체크박스 복원
   if (localStorage.getItem('drscanpro_autoLogin') === 'true') {
     document.getElementById('autoLogin').checked = true;
   }
@@ -1352,16 +1354,10 @@ async function initAuth() {
 
       if (templateMapping) document.getElementById('mappingSaved').style.display = 'block';
 
-      // ???뺣낫 ?⑤꼸 ?낅뜲?댄듃
-      document.getElementById('settingsHospital').textContent = currentUserData.hospitalName || '??;
-      document.getElementById('settingsName').textContent = currentUserData.name || '??;
-      document.getElementById('settingsEmail').textContent = user.email || '??;
-
-      // API ?? 蹂듭썝
-      const savedKey = localStorage.getItem('drscanpro_apikey') || '';
-      if (document.getElementById('settingsApiKey')) {
-        document.getElementById('settingsApiKey').value = savedKey;
-      }
+      // 내 정보 패널 업데이트
+      document.getElementById('settingsHospital').textContent = currentUserData.hospitalName || '—';
+      document.getElementById('settingsName').textContent = currentUserData.name || '—';
+      document.getElementById('settingsEmail').textContent = user.email || '—';
 
       loadInvoices();
     } else {
@@ -1372,7 +1368,7 @@ async function initAuth() {
   });
 }
 
-// ??? NAVIGATION ???????????????????????????????????????????
+// ─── NAVIGATION ───────────────────────────────────────────
 function showPanel(name, btn) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -1396,36 +1392,33 @@ function hideAllAuthForms() {
 }
 function showAdmin() { document.getElementById('loginEmail').value = ADMIN_EMAIL; document.getElementById('loginPassword').focus(); }
 
-// ??? FILE UPLOAD ??????????????????????????????????????????
+// ─── FILE UPLOAD ──────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   const fileInput = document.getElementById('fileInput');
   const uploadZone = document.getElementById('uploadZone');
-
-  // 모바일에서만 카메라 촬영 활성화
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  if (isMobile) fileInput.setAttribute('capture', 'environment');
 
   fileInput.addEventListener('change', e => { if (e.target.files.length) handleFiles(e.target.files); });
   uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
   uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
   uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
 
-  // Ctrl+V 붙여넣기 (스캔 패널 활성 시)
+  // 모바일에서만 카메라 촬영
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) fileInput.setAttribute('capture', 'environment');
+
+  // Ctrl+V 붙여넣기
   document.addEventListener('paste', e => {
-    if (!document.getElementById('panelScan')?.classList.contains('active')) return;
-    const items = e.clipboardData?.items;
+    if (!document.getElementById('panelScan').classList.contains('active')) return;
+    const items = e.clipboardData && e.clipboardData.items;
     if (!items) return;
     const files = [];
-    for (const item of items) {
-      if (item.kind === 'file') files.push(item.getAsFile());
-    }
+    for (let i = 0; i < items.length; i++) { if (items[i].kind === 'file') files.push(items[i].getAsFile()); }
     if (files.length) { e.preventDefault(); handleFiles(files); }
   });
 
   addItemRow();
   initAuth();
 
-  // ESC ?ㅻ줈 紐⑤떖 ?リ린
+  // ESC 키로 모달 닫기
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
@@ -1434,32 +1427,26 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function handleFiles(files) {
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-  for (const file of files) {
-    const isImage = file.type.startsWith('image/');
-    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-    if (!isImage && !isPdf) {
-      showToast('이미지 또는 PDF 파일만 가능합니다', 'error');
-      continue;
-    }
-    if (file.size > MAX_FILE_SIZE) {
-      showToast(file.name + ': 파일이 너무 큽니다 (10MB 이하)', 'error');
-      continue;
-    }
-    if (isPdf) { handlePdfFile(file); }
-    else { addImageFile(file); }
+  var MAX_SIZE = 10 * 1024 * 1024;
+  for (var i = 0; i < files.length; i++) {
+    var file = files[i];
+    var isImage = file.type.startsWith('image/');
+    var isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isImage && !isPdf) { showToast('이미지 또는 PDF 파일만 가능합니다', 'error'); continue; }
+    if (file.size > MAX_SIZE) { showToast(file.name + ': 파일이 너무 큽니다 (10MB 이하)', 'error'); continue; }
+    if (isPdf) { handlePdfFile(file); } else { addImageFile(file); }
   }
 }
 
 function addImageFile(file) {
-  compressImage(file, 1600, 0.7).then(({ base64, dataUrl }) => {
-    currentImages.push({ base64, type: 'image/jpeg', dataUrl });
-    currentImageBase64 = base64;
+  compressImage(file, 1600, 0.7).then(function(r) {
+    currentImages.push({ base64: r.base64, type: 'image/jpeg', dataUrl: r.dataUrl });
+    currentImageBase64 = r.base64;
     currentImageType = 'image/jpeg';
     updateImageUI();
-  }).catch(() => {
-    const reader = new FileReader();
-    reader.onload = e => {
+  }).catch(function() {
+    var reader = new FileReader();
+    reader.onload = function(e) {
       currentImages.push({ base64: e.target.result.split(',')[1], type: file.type, dataUrl: e.target.result });
       currentImageBase64 = e.target.result.split(',')[1];
       currentImageType = file.type;
@@ -1470,76 +1457,44 @@ function addImageFile(file) {
 }
 
 function updateImageUI() {
-  const preview = document.getElementById('previewImg');
-  const listEl = document.getElementById('imageList');
-  const strip = document.getElementById('thumbnailStrip');
-  const countEl = document.getElementById('imageCount');
-
-  if (!currentImages.length) {
-    preview.style.display = 'none';
-    listEl.style.display = 'none';
-    document.getElementById('analyzeBtn').disabled = true;
-    return;
-  }
-
+  var preview = document.getElementById('previewImg');
+  var listEl = document.getElementById('imageList');
+  var strip = document.getElementById('thumbnailStrip');
+  var countEl = document.getElementById('imageCount');
+  if (!currentImages.length) { preview.style.display = 'none'; listEl.style.display = 'none'; document.getElementById('analyzeBtn').disabled = true; return; }
   preview.src = currentImages[currentImages.length - 1].dataUrl;
   preview.style.display = 'block';
   document.getElementById('analyzeBtn').disabled = false;
-
   if (currentImages.length > 1) {
     listEl.style.display = 'block';
-    strip.innerHTML = currentImages.map((img, i) =>
-      '<div style="position:relative;flex-shrink:0">' +
-      '<img src="' + img.dataUrl + '" style="width:60px;height:60px;border-radius:6px;border:2px solid var(--border);object-fit:cover;cursor:pointer" onclick="selectImage(' + i + ')">' +
-      '<button onclick="removeImage(' + i + ')" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;background:#ef4444;color:#fff;border:none;border-radius:50%;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">&times;</button>' +
-      '</div>'
-    ).join('');
+    strip.innerHTML = currentImages.map(function(img, i) {
+      return '<div style="position:relative;flex-shrink:0"><img src="' + img.dataUrl + '" style="width:60px;height:60px;border-radius:6px;border:2px solid var(--border);object-fit:cover;cursor:pointer" onclick="selectImage(' + i + ')"><button onclick="removeImage(' + i + ')" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;background:#ef4444;color:#fff;border:none;border-radius:50%;font-size:10px;cursor:pointer">&times;</button></div>';
+    }).join('');
     countEl.textContent = currentImages.length + '장 선택됨';
-  } else {
-    listEl.style.display = 'none';
-  }
+  } else { listEl.style.display = 'none'; }
 }
+function selectImage(idx) { document.getElementById('previewImg').src = currentImages[idx].dataUrl; }
+function removeImage(idx) { currentImages.splice(idx, 1); if (currentImages.length) { currentImageBase64 = currentImages[currentImages.length-1].base64; } else { currentImageBase64 = null; } updateImageUI(); }
 
-function selectImage(idx) {
-  document.getElementById('previewImg').src = currentImages[idx].dataUrl;
-}
-
-function removeImage(idx) {
-  currentImages.splice(idx, 1);
-  if (currentImages.length) {
-    currentImageBase64 = currentImages[currentImages.length - 1].base64;
-    currentImageType = currentImages[currentImages.length - 1].type;
-  } else {
-    currentImageBase64 = null;
-  }
-  updateImageUI();
-}
-
-// PDF ???대?吏 蹂??(媛??섏씠吏瑜??대?吏濡??뚮뜑留?
+// PDF → 이미지 변환 (각 페이지를 이미지로 렌더링)
 async function handlePdfFile(file) {
   setStatus('processing', 'PDF 변환 중...');
   try {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-    for (let i = 1; i <= pdf.numPages; i++) {
-      setStatus('processing', 'PDF 변환 중... (' + i + '/' + pdf.numPages + ')');
-      const page = await pdf.getPage(i);
-      const scale = 2.0;
-      const viewport = page.getViewport({ scale });
-      const canvas = document.createElement('canvas');
+    for (var pi = 1; pi <= pdf.numPages; pi++) {
+      setStatus('processing', 'PDF 변환 중... (' + pi + '/' + pdf.numPages + ')');
+      var page = await pdf.getPage(pi);
+      var viewport = page.getViewport({ scale: 2.0 });
+      var canvas = document.createElement('canvas');
       canvas.width = viewport.width;
       canvas.height = viewport.height;
-      const ctx = canvas.getContext('2d');
-      await page.render({ canvasContext: ctx, viewport }).promise;
-
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      const base64 = dataUrl.split(',')[1];
-      currentImages.push({ base64, type: 'image/jpeg', dataUrl });
-      currentImageBase64 = base64;
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+      var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      currentImages.push({ base64: dataUrl.split(',')[1], type: 'image/jpeg', dataUrl: dataUrl });
+      currentImageBase64 = dataUrl.split(',')[1];
       currentImageType = 'image/jpeg';
     }
-
     updateImageUI();
     setStatus('success', 'PDF ' + pdf.numPages + '페이지 변환 완료');
   } catch(e) {
@@ -1548,7 +1503,7 @@ async function handlePdfFile(file) {
   }
 }
 
-// ?대?吏 ?뺤텞 (413 ?먮윭 諛⑹? - Vercel 4.5MB ?쒗븳)
+// 이미지 압축 (413 에러 방지 - Vercel 4.5MB 제한)
 function compressImage(file, maxSize, quality) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -1573,35 +1528,11 @@ function compressImage(file, maxSize, quality) {
   });
 }
 
-// ??? ANALYZE (Vercel ?꾨줉???ъ슜 ??CORS ?닿껐) ???????????
-// 저장용 썸네일 생성 (300px, 낮은 품질 - Firestore 용량 절약)
-function createThumbnail(base64, mediaType) {
-  return new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => {
-      let w = img.width, h = img.height;
-      const maxSize = 300;
-      if (w > maxSize || h > maxSize) {
-        const ratio = Math.min(maxSize / w, maxSize / h);
-        w = Math.round(w * ratio);
-        h = Math.round(h * ratio);
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL('image/jpeg', 0.3));
-    };
-    img.onerror = () => resolve(null);
-    img.src = 'data:' + (mediaType || 'image/jpeg') + ';base64,' + base64;
-  });
-}
-
+// ─── ANALYZE (Vercel 프록시 사용 → CORS 해결) ───────────
 async function analyze() {
   if (!currentImages.length && !currentImageBase64) return;
 
-  setStatus('processing', '嫄곕옒紐낆꽭??遺꾩꽍 以?..');
+  setStatus('processing', '거래명세서 분석 중...');
   document.getElementById('analyzeBtn').disabled = true;
 
   try {
@@ -1609,34 +1540,34 @@ async function analyze() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(currentImages.length > 1
-        ? { images: currentImages.map(img => ({ base64: img.base64, type: img.type })), apiKey: localStorage.getItem('drscanpro_apikey') || '' }
+        ? { images: currentImages.map(function(img) { return { base64: img.base64, type: img.type }; }), apiKey: localStorage.getItem('drscanpro_apikey') || '' }
         : { imageBase64: currentImageBase64, imageType: currentImageType, apiKey: localStorage.getItem('drscanpro_apikey') || '' }
       )
     });
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'API ?ㅻ쪟');
+      throw new Error(err.error || 'API 오류');
     }
     const data = await res.json();
     const text = data.content[0].text;
     const match = text.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('?뚯떛 ?ㅽ뙣');
+    if (!match) throw new Error('파싱 실패');
     fillForm(JSON.parse(match[0]));
-    setStatus('success', '遺꾩꽍 ?꾨즺! ?댁슜???뺤씤?섍퀬 ??ν븯?몄슂');
+    setStatus('success', '분석 완료! 내용을 확인하고 저장하세요');
     document.getElementById('formEmpty').style.display = 'none';
     document.getElementById('formContent').style.display = 'block';
     document.getElementById('bottomBar').style.display = 'flex';
-    showToast('遺꾩꽍 ?꾨즺', 'success');
+    showToast('분석 완료', 'success');
   } catch(e) {
-    setStatus('error', '?ㅻ쪟: ' + e.message);
-    showToast('遺꾩꽍 ?ㅽ뙣: ' + e.message, 'error');
+    setStatus('error', '오류: ' + e.message);
+    showToast('분석 실패: ' + e.message, 'error');
   } finally {
     document.getElementById('analyzeBtn').disabled = false;
   }
 }
 
-// ??? FILL FORM ????????????????????????????????????????????
+// ─── FILL FORM ────────────────────────────────────────────
 function fillForm(d) {
   const s = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
   s('f-date', d.date); s('f-docno', d.docNo); s('f-vendor', d.vendor);
@@ -1645,7 +1576,7 @@ function fillForm(d) {
   s('f-supply', d.supplyAmount ? Number(d.supplyAmount).toLocaleString() : '');
   s('f-vat', d.vat ? Number(d.vat).toLocaleString() : '');
   s('f-total', d.totalAmount ? Number(d.totalAmount).toLocaleString() : '');
-  if (d.totalAmount) document.getElementById('totalDisplay').textContent = Number(d.totalAmount).toLocaleString() + '??;
+  if (d.totalAmount) document.getElementById('totalDisplay').textContent = Number(d.totalAmount).toLocaleString() + '원';
 
   const conf = d.confidence || {};
   const map = [['date','date'],['docno','docNo'],['vendor','vendor'],['bizno','bizNo'],['contact','contact'],['items','items'],['supply','supplyAmount'],['total','totalAmount']];
@@ -1663,7 +1594,7 @@ function fillForm(d) {
   else addItemRow();
 }
 
-// ??? ITEMS ????????????????????????????????????????????????
+// ─── ITEMS ────────────────────────────────────────────────
 function addItemRow(item) {
   item = item || {};
   const tbody = document.getElementById('itemsBody');
@@ -1671,15 +1602,15 @@ function addItemRow(item) {
   const tr = document.createElement('tr');
   tr.innerHTML =
     '<td style="color:var(--text-muted);font-size:11px">' + n + '</td>' +
-    '<td><input value="' + esc(item.code) + '" placeholder="蹂댄뿕肄붾뱶" style="width:90px"></td>' +
-    '<td><input value="' + esc(item.name) + '" placeholder="?덈챸" style="min-width:120px"></td>' +
-    '<td><input value="' + esc(item.spec) + '" placeholder="洹쒓꺽" style="width:80px"></td>' +
-    '<td><input value="' + esc(item.unit) + '" placeholder="?⑥쐞" style="width:50px"></td>' +
+    '<td><input value="' + esc(item.code) + '" placeholder="보험코드" style="width:90px"></td>' +
+    '<td><input value="' + esc(item.name) + '" placeholder="품명" style="min-width:120px"></td>' +
+    '<td><input value="' + esc(item.spec) + '" placeholder="규격" style="width:80px"></td>' +
+    '<td><input value="' + esc(item.unit) + '" placeholder="단위" style="width:50px"></td>' +
     '<td><input value="' + esc(item.qty) + '" placeholder="0" style="width:50px" oninput="recalcRow(this)"></td>' +
-    '<td><input value="' + esc(item.unitPrice ? Number(item.unitPrice).toLocaleString() : '') + '" placeholder="?④?" style="width:80px" oninput="recalcRow(this)"></td>' +
-    '<td><input value="' + esc(item.unitPriceVat ? Number(item.unitPriceVat).toLocaleString() : '') + '" placeholder="VAT?ы븿" style="width:80px"></td>' +
-    '<td><input value="' + esc(item.amount ? Number(item.amount).toLocaleString() : '') + '" placeholder="湲덉븸" style="width:90px"></td>' +
-    '<td><input value="' + esc(item.manufacturer) + '" placeholder="?쒖“?? style="width:80px"></td>';
+    '<td><input value="' + esc(item.unitPrice ? Number(item.unitPrice).toLocaleString() : '') + '" placeholder="단가" style="width:80px" oninput="recalcRow(this)"></td>' +
+    '<td><input value="' + esc(item.unitPriceVat ? Number(item.unitPriceVat).toLocaleString() : '') + '" placeholder="VAT포함" style="width:80px"></td>' +
+    '<td><input value="' + esc(item.amount ? Number(item.amount).toLocaleString() : '') + '" placeholder="금액" style="width:90px"></td>' +
+    '<td><input value="' + esc(item.manufacturer) + '" placeholder="제조사" style="width:80px"></td>';
   tbody.appendChild(tr);
 }
 
@@ -1705,17 +1636,17 @@ function recalcTotals() {
   document.getElementById('f-supply').value = total.toLocaleString();
   document.getElementById('f-vat').value = vat.toLocaleString();
   document.getElementById('f-total').value = (total + vat).toLocaleString();
-  document.getElementById('totalDisplay').textContent = (total + vat).toLocaleString() + '??;
+  document.getElementById('totalDisplay').textContent = (total + vat).toLocaleString() + '원';
 }
 
 function esc(v) { return String(v || '').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 
-// ??? SAVE ?????????????????????????????????????????????????
+// ─── SAVE ─────────────────────────────────────────────────
 async function saveInvoice() {
   if (!currentUser) return;
   const fb = window._firebase;
 
-  setStatus('processing', '???以?..');
+  setStatus('processing', '저장 중...');
 
   try {
     let imageUrl = null;
@@ -1757,19 +1688,18 @@ async function saveInvoice() {
     };
 
     await fb.addDoc(fb.collection(fb.db, 'invoices'), invoice);
-    setStatus('success', '????꾨즺!');
-    showToast('??λ릺?덉뒿?덈떎', 'success');
+    setStatus('success', '저장 완료!');
+    showToast('저장되었습니다', 'success');
     clearScan();
   } catch(e) {
-    setStatus('error', '????ㅽ뙣: ' + e.message);
-    showToast('????ㅽ뙣: ' + e.message, 'error');
+    setStatus('error', '저장 실패: ' + e.message);
+    showToast('저장 실패: ' + e.message, 'error');
   }
 }
 
-// ??? LOAD INVOICES ????????????????????????????????????????
+// ─── LOAD INVOICES ────────────────────────────────────────
 async function loadInvoices() {
   if (!currentUser) return;
-  currentPage = 1;
   const fb = window._firebase;
   try {
     const isAdmin = currentUserData?.role === 'admin' || currentUser.email === ADMIN_EMAIL;
@@ -1781,7 +1711,7 @@ async function loadInvoices() {
       snap = await fb.getDocs(q);
     }
     invoices = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    // createdAt 湲곗? ?대┝李⑥닚 ?뺣젹 (?대씪?댁뼵??
+    // createdAt 기준 내림차순 정렬 (클라이언트)
     invoices.sort((a, b) => {
       const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
       const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
@@ -1790,16 +1720,14 @@ async function loadInvoices() {
     renderInvoiceList(invoices);
   } catch(e) {
     console.error('loadInvoices error:', e);
-    showToast('紐⑸줉 濡쒕뱶 ?ㅽ뙣: ' + e.message, 'error');
+    showToast('목록 로드 실패: ' + e.message, 'error');
   }
 }
 
 let currentSort = { col: null, dir: 'desc' };
-const PAGE_SIZE = 20;
-let currentPage = 1;
 
 function formatCreatedAt(ts) {
-  if (!ts || !ts.toDate) return '??;
+  if (!ts || !ts.toDate) return '—';
   const d = ts.toDate();
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
@@ -1817,131 +1745,44 @@ function renderInvoiceList(list) {
   const admin = isAdminUser();
   const cols = admin ? 10 : 9;
 
-  // 페이지네이션
-  const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
-  if (currentPage > totalPages) currentPage = totalPages;
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const pageList = list.slice(start, start + PAGE_SIZE);
-
-  // 愿由ъ옄: 蹂묒썝紐?而щ읆 + 寃?됰? ?쒖떆
+  // 관리자: 병원명 컬럼 + 검색란 표시
   const header = document.getElementById('listTableHeader');
   const hasHospitalCol = header.querySelector('.th-hospital');
   if (admin && !hasHospitalCol) {
     const th = document.createElement('th');
     th.className = 'sortable th-hospital';
     th.onclick = () => sortInvoices('hospitalName');
-    th.innerHTML = '蹂묒썝紐?<span class="sort-icon" data-col="hospitalName"></span>';
-    header.insertBefore(th, header.children[1]); // 泥댄겕諛뺤뒪 ?ㅼ쓬
+    th.innerHTML = '병원명 <span class="sort-icon" data-col="hospitalName"></span>';
+    header.insertBefore(th, header.children[1]); // 체크박스 다음
     document.getElementById('filterHospital').style.display = '';
   }
 
   if (!list.length) {
-    renderPagination(0, 1);
-    tbody.innerHTML = '<tr><td colspan="' + cols + '" style="text-align:center;padding:40px;color:var(--text-muted)">??λ맂 紐낆꽭?쒓? ?놁뒿?덈떎</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="' + cols + '" style="text-align:center;padding:40px;color:var(--text-muted)">저장된 명세서가 없습니다</td></tr>';
     document.getElementById('selectAll').checked = false;
     updateSelectionUI();
     return;
   }
-  const mobile = window.innerWidth <= 768;
-
-  if (mobile) {
-    // 모바일: 카드 레이아웃
-    const tableEl = document.querySelector('#panelList .invoice-table');
-    tableEl.style.display = 'none';
-    let cardContainer = document.getElementById('invoiceCards');
-    if (!cardContainer) {
-      cardContainer = document.createElement('div');
-      cardContainer.id = 'invoiceCards';
-      tableEl.after(cardContainer);
-    }
-    cardContainer.innerHTML = pageList.map(inv => {
-      const statusClass = inv.status === 'confirmed' ? 'status-confirmed' : 'status-pending';
-      const statusText = inv.status === 'confirmed' ? '확정' : '검토중';
-      return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px">' +
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
-          '<input type="checkbox" class="inv-check" value="' + inv.id + '" onchange="updateSelectionUI()" style="accent-color:var(--accent);cursor:pointer;flex-shrink:0">' +
-          '<div style="flex:1;min-width:0">' +
-            '<div style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (inv.vendor || '-') + '</div>' +
-            '<div style="font-size:11px;color:var(--text-muted)">' + (inv.date || '-') + ' · ' + formatCreatedAt(inv.createdAt) + (admin ? ' · ' + (inv.hospitalName || '') : '') + '</div>' +
-          '</div>' +
-          '<span class="status-chip ' + statusClass + '">' + statusText + '</span>' +
-        '</div>' +
-        '<div style="display:flex;align-items:center;justify-content:space-between">' +
-          '<div style="font-size:12px;color:var(--text-muted)">' + (inv.type || '-') + ' · ' + (inv.items?.length || 0) + '건</div>' +
-          '<div style="font-family:JetBrains Mono,monospace;font-weight:700;color:var(--accent);font-size:14px">' + (inv.totalAmount ? inv.totalAmount + '원' : '-') + '</div>' +
-        '</div>' +
-        '<div style="display:flex;gap:6px;margin-top:10px">' +
-          '<button class="btn-sm" onclick="editInvoice(\'' + inv.id + '\')" style="flex:1">수정</button>' +
-          '<button class="btn-sm" onclick="deleteSingleInvoice(\'' + inv.id + '\')" style="flex:1;color:#f87171;border-color:rgba(239,68,68,0.3)">삭제</button>' +
-          (inv.imageUrl ? '<button class="btn-sm" onclick="viewImage(\'' + inv.imageUrl + '\')" style="flex:1">원본</button>' : '') +
-        '</div>' +
-      '</div>';
-    }).join('');
-  } else {
-    // PC: 기존 테이블
-    const tableEl = document.querySelector('#panelList .invoice-table');
-    tableEl.style.display = '';
-    const cardContainer = document.getElementById('invoiceCards');
-    if (cardContainer) cardContainer.innerHTML = '';
-
-    tbody.innerHTML = pageList.map(inv =>
-      '<tr>' +
-      '<td onclick="event.stopPropagation()"><input type="checkbox" class="inv-check" value="' + inv.id + '" onchange="updateSelectionUI()" style="accent-color:var(--accent);cursor:pointer"></td>' +
-      (admin ? '<td style="font-weight:500;font-size:11px">' + (inv.hospitalName || '-') + '</td>' : '') +
-      '<td>' + (inv.date || '-') + '</td>' +
-      '<td style="font-size:11px;color:var(--text-muted)">' + formatCreatedAt(inv.createdAt) + '</td>' +
-      '<td style="font-weight:500">' + (inv.vendor || '-') + '</td>' +
-      '<td>' + (inv.type || '-') + '</td>' +
-      '<td>' + (inv.items?.length || 0) + '건</td>' +
-      '<td style="font-family:JetBrains Mono,monospace;color:var(--accent)">' + (inv.totalAmount ? inv.totalAmount + '원' : '-') + '</td>' +
-      '<td><span class="status-chip ' + (inv.status === 'confirmed' ? 'status-confirmed' : 'status-pending') + '">' + (inv.status === 'confirmed' ? '확정' : '검토중') + '</span></td>' +
-      '<td style="white-space:nowrap">' +
-        '<button class="btn-sm" onclick="event.stopPropagation();editInvoice(\'' + inv.id + '\')" style="margin-right:4px">수정</button>' +
-        '<button class="btn-sm" onclick="event.stopPropagation();deleteSingleInvoice(\'' + inv.id + '\')" style="color:#f87171;border-color:rgba(239,68,68,0.3)">삭제</button>' +
-        (inv.imageUrl ? ' <button class="btn-sm" onclick="event.stopPropagation();viewImage(\'' + inv.imageUrl + '\')">원본</button>' : '') +
-      '</td>' +
-      '</tr>'
-    ).join('');
-  }
-
+  tbody.innerHTML = list.map(inv =>
+    '<tr>' +
+    '<td onclick="event.stopPropagation()"><input type="checkbox" class="inv-check" value="' + inv.id + '" onchange="updateSelectionUI()" style="accent-color:var(--accent);cursor:pointer"></td>' +
+    (admin ? '<td style="font-weight:500;font-size:11px">' + (inv.hospitalName || '—') + '</td>' : '') +
+    '<td>' + (inv.date || '—') + '</td>' +
+    '<td style="font-size:11px;color:var(--text-muted)">' + formatCreatedAt(inv.createdAt) + '</td>' +
+    '<td style="font-weight:500">' + (inv.vendor || '—') + '</td>' +
+    '<td>' + (inv.type || '—') + '</td>' +
+    '<td>' + (inv.items?.length || 0) + '개</td>' +
+    '<td style="font-family:JetBrains Mono,monospace;color:var(--accent)">' + (inv.totalAmount ? inv.totalAmount + '원' : '—') + '</td>' +
+    '<td><span class="status-chip ' + (inv.status === 'confirmed' ? 'status-confirmed' : 'status-pending') + '">' + (inv.status === 'confirmed' ? '확정' : '검수중') + '</span></td>' +
+    '<td style="white-space:nowrap">' +
+      '<button class="btn-sm" onclick="event.stopPropagation();editInvoice(\'' + inv.id + '\')" style="margin-right:4px">수정</button>' +
+      '<button class="btn-sm" onclick="event.stopPropagation();deleteSingleInvoice(\'' + inv.id + '\')" style="color:#f87171;border-color:rgba(239,68,68,0.3)">삭제</button>' +
+      (inv.imageUrl ? ' <button class="btn-sm" onclick="event.stopPropagation();viewImage(\'' + inv.imageUrl + '\')">원본</button>' : '') +
+    '</td>' +
+    '</tr>'
+  ).join('');
   document.getElementById('selectAll').checked = false;
   updateSelectionUI();
-  renderPagination(list.length, totalPages);
-}
-function renderPagination(total, totalPages) {
-  let container = document.getElementById('paginationBar');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'paginationBar';
-    container.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:6px;padding:16px 0;flex-wrap:wrap';
-    document.querySelector('#panelList .invoice-table').after(container);
-  }
-
-  if (totalPages <= 1) {
-    container.innerHTML = total ? '<span style="font-size:12px;color:var(--text-muted)">총 ' + total + '건</span>' : '';
-    return;
-  }
-
-  let html = '<button class="btn-sm" onclick="goPage(1)" ' + (currentPage === 1 ? 'disabled style="opacity:0.3"' : '') + '>&laquo;</button>';
-  html += '<button class="btn-sm" onclick="goPage(' + (currentPage - 1) + ')" ' + (currentPage === 1 ? 'disabled style="opacity:0.3"' : '') + '>&lsaquo;</button>';
-
-  const startPage = Math.max(1, currentPage - 2);
-  const endPage = Math.min(totalPages, startPage + 4);
-  for (let p = startPage; p <= endPage; p++) {
-    html += '<button class="btn-sm' + (p === currentPage ? ' active' : '') + '" onclick="goPage(' + p + ')" style="' +
-      (p === currentPage ? 'background:var(--accent);color:#fff;border-color:var(--accent)' : '') + '">' + p + '</button>';
-  }
-
-  html += '<button class="btn-sm" onclick="goPage(' + (currentPage + 1) + ')" ' + (currentPage === totalPages ? 'disabled style="opacity:0.3"' : '') + '>&rsaquo;</button>';
-  html += '<button class="btn-sm" onclick="goPage(' + totalPages + ')" ' + (currentPage === totalPages ? 'disabled style="opacity:0.3"' : '') + '>&raquo;</button>';
-  html += '<span style="font-size:12px;color:var(--text-muted);margin-left:8px">총 ' + total + '건</span>';
-
-  container.innerHTML = html;
-}
-
-function goPage(page) {
-  currentPage = page;
-  filterInvoices();
 }
 
 function sortInvoices(col) {
@@ -1952,7 +1793,7 @@ function sortInvoices(col) {
     currentSort.dir = 'asc';
   }
 
-  // ?꾩씠肄??낅뜲?댄듃
+  // 아이콘 업데이트
   document.querySelectorAll('.sort-icon').forEach(s => s.className = 'sort-icon');
   const icon = document.querySelector('.sort-icon[data-col="' + col + '"]');
   if (icon) icon.classList.add(currentSort.dir);
@@ -1981,9 +1822,8 @@ function sortInvoices(col) {
 }
 
 function setDateFilter(type, btn) {
-  currentPage = 1;
-  const now = new Date(new Date().getTime() + 9*60*60*1000);
-  const fmt = d => { const kst = new Date(d.getTime() + 9*60*60*1000); return kst.toISOString().slice(0, 10); };
+  const now = new Date();
+  const fmt = d => d.toISOString().slice(0, 10);
   let from = '', to = '';
 
   if (type === 'today') {
@@ -2027,7 +1867,7 @@ function filterInvoices() {
   renderInvoiceList(filtered);
 }
 
-// ??? EXCEL EXPORT ?????????????????????????????????????????
+// ─── EXCEL EXPORT ─────────────────────────────────────────
 function exportExcel() {
   const items = [];
   document.getElementById('itemsBody').querySelectorAll('tr').forEach((tr, i) => {
@@ -2039,27 +1879,27 @@ function exportExcel() {
     exportWithTemplate([getFormData()], templateMapping);
   } else {
     const wb = XLSX.utils.book_new();
-    const header = [['嫄곕옒?쇱옄','紐낆꽭?쒕쾲??,'怨듦툒?낆껜','?ъ뾽?먮쾲??,'?대떦??,'遺??,'援щ텇','寃곗젣議곌굔','怨듦툒媛??,'?몄븸','?⑷퀎湲덉븸']];
+    const header = [['거래일자','명세서번호','공급업체','사업자번호','담당자','부서','구분','결제조건','공급가액','세액','합계금액']];
     const row = [document.getElementById('f-date').value, document.getElementById('f-docno').value, document.getElementById('f-vendor').value, document.getElementById('f-bizno').value, document.getElementById('f-contact').value, document.getElementById('f-dept').value, document.getElementById('f-type').value, document.getElementById('f-payment').value, document.getElementById('f-supply').value, document.getElementById('f-vat').value, document.getElementById('f-total').value];
     const ws1 = XLSX.utils.aoa_to_sheet([...header, row]);
-    XLSX.utils.book_append_sheet(wb, ws1, '湲곕낯?뺣낫');
-    const itemHeader = [['#','蹂댄뿕肄붾뱶','?덈챸','洹쒓꺽','?⑥쐞','?섎웾','?④?','?④?(VAT)','湲덉븸','?쒖“??]];
+    XLSX.utils.book_append_sheet(wb, ws1, '기본정보');
+    const itemHeader = [['#','보험코드','품명','규격','단위','수량','단가','단가(VAT)','금액','제조사']];
     const ws2 = XLSX.utils.aoa_to_sheet([...itemHeader, ...items]);
-    XLSX.utils.book_append_sheet(wb, ws2, '?덈ぉ?댁뿭');
-    XLSX.writeFile(wb, (document.getElementById('f-vendor').value || '紐낆꽭??) + '_' + (document.getElementById('f-date').value || 'date') + '.xlsx');
+    XLSX.utils.book_append_sheet(wb, ws2, '품목내역');
+    XLSX.writeFile(wb, (document.getElementById('f-vendor').value || '명세서') + '_' + (document.getElementById('f-date').value || 'date') + '.xlsx');
   }
-  showToast('?묒? ????꾨즺', 'success');
+  showToast('엑셀 저장 완료', 'success');
 }
 
 function exportAllExcel() {
-  if (!invoices.length) { showToast('??λ맂 紐낆꽭?쒓? ?놁뒿?덈떎', 'error'); return; }
+  if (!invoices.length) { showToast('저장된 명세서가 없습니다', 'error'); return; }
   const wb = XLSX.utils.book_new();
-  const header = [['蹂묒썝紐?,'嫄곕옒?쇱옄','?낆껜紐?,'?ъ뾽?먮쾲??,'援щ텇','遺??,'怨듦툒媛??,'?몄븸','?⑷퀎湲덉븸','?곹깭']];
+  const header = [['병원명','거래일자','업체명','사업자번호','구분','부서','공급가액','세액','합계금액','상태']];
   const rows = invoices.map(inv => [inv.hospitalName, inv.date, inv.vendor, inv.bizNo, inv.type, inv.dept, inv.supplyAmount, inv.vat, inv.totalAmount, inv.status]);
   const ws = XLSX.utils.aoa_to_sheet([...header, ...rows]);
-  XLSX.utils.book_append_sheet(wb, ws, '紐낆꽭?쒕ぉ濡?);
-  XLSX.writeFile(wb, '?ν꽣?ㅼ틪Pro_' + new Date().toISOString().slice(0,10) + '.xlsx');
-  showToast('?꾩껜 ?묒? 異붿텧 ?꾨즺', 'success');
+  XLSX.utils.book_append_sheet(wb, ws, '명세서목록');
+  XLSX.writeFile(wb, '닥터스캔Pro_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  showToast('전체 엑셀 추출 완료', 'success');
 }
 
 function exportWithTemplate(dataArr, mapping) {
@@ -2067,8 +1907,8 @@ function exportWithTemplate(dataArr, mapping) {
   const headerRow = mapping.map(m => m.originalCol);
   const rows = dataArr.map(d => mapping.map(m => d[m.field] || ''));
   const ws = XLSX.utils.aoa_to_sheet([headerRow, ...rows]);
-  XLSX.utils.book_append_sheet(wb, ws, '嫄곕옒紐낆꽭??);
-  XLSX.writeFile(wb, '?ν꽣?ㅼ틪Pro_蹂묒썝?묒떇_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  XLSX.utils.book_append_sheet(wb, ws, '거래명세서');
+  XLSX.writeFile(wb, '닥터스캔Pro_병원양식_' + new Date().toISOString().slice(0,10) + '.xlsx');
 }
 
 function getFormData() {
@@ -2087,7 +1927,7 @@ function getFormData() {
   };
 }
 
-// ??? TEMPLATE ?????????????????????????????????????????????
+// ─── TEMPLATE ─────────────────────────────────────────────
 function handleTemplate(input) {
   const file = input.files[0];
   if (!file) return;
@@ -2096,7 +1936,7 @@ function handleTemplate(input) {
     const wb = XLSX.read(e.target.result, { type: 'binary' });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
-    if (!data.length) { showToast('?ㅻ뜑瑜?李얠쓣 ???놁뒿?덈떎', 'error'); return; }
+    if (!data.length) { showToast('헤더를 찾을 수 없습니다', 'error'); return; }
     const headers = data[0].filter(Boolean);
     renderMappingUI(headers);
   };
@@ -2104,12 +1944,12 @@ function handleTemplate(input) {
 }
 
 const FIELDS = [
-  { value: 'date', label: '嫄곕옒?쇱옄' }, { value: 'docNo', label: '紐낆꽭?쒕쾲?? },
-  { value: 'vendor', label: '怨듦툒?낆껜紐? }, { value: 'bizNo', label: '?ъ뾽?먮쾲?? },
-  { value: 'contact', label: '?대떦?? }, { value: 'dept', label: '遺?? },
-  { value: 'type', label: '嫄곕옒援щ텇' }, { value: 'payment', label: '寃곗젣議곌굔' },
-  { value: 'supplyAmount', label: '怨듦툒媛?? }, { value: 'vat', label: '?몄븸' },
-  { value: 'totalAmount', label: '?⑷퀎湲덉븸' }, { value: '', label: '(留ㅽ븨 ?덊븿)' }
+  { value: 'date', label: '거래일자' }, { value: 'docNo', label: '명세서번호' },
+  { value: 'vendor', label: '공급업체명' }, { value: 'bizNo', label: '사업자번호' },
+  { value: 'contact', label: '담당자' }, { value: 'dept', label: '부서' },
+  { value: 'type', label: '거래구분' }, { value: 'payment', label: '결제조건' },
+  { value: 'supplyAmount', label: '공급가액' }, { value: 'vat', label: '세액' },
+  { value: 'totalAmount', label: '합계금액' }, { value: '', label: '(매핑 안함)' }
 ];
 
 function renderMappingUI(headers) {
@@ -2120,8 +1960,8 @@ function renderMappingUI(headers) {
   table.innerHTML = headers.map(col => {
     const options = FIELDS.map(f => '<option value="' + f.value + '">' + f.label + '</option>').join('');
     return '<div class="mapping-row">' +
-      '<div class="mapping-col">?뱤 ' + col + '</div>' +
-      '<div class="mapping-arrow">??/div>' +
+      '<div class="mapping-col">📊 ' + col + '</div>' +
+      '<div class="mapping-arrow">→</div>' +
       '<select class="mapping-select" data-col="' + col + '">' + options + '</select>' +
       '</div>';
   }).join('');
@@ -2145,7 +1985,7 @@ function saveMapping() {
   localStorage.setItem('drscanpro_mapping', JSON.stringify(mapping));
   document.getElementById('mappingArea').style.display = 'none';
   document.getElementById('mappingSaved').style.display = 'block';
-  showToast('?묒떇 留ㅽ븨 ????꾨즺', 'success');
+  showToast('양식 매핑 저장 완료', 'success');
 }
 
 function resetTemplate() {
@@ -2154,10 +1994,10 @@ function resetTemplate() {
   document.getElementById('mappingSaved').style.display = 'none';
   document.getElementById('mappingArea').style.display = 'none';
   document.getElementById('templateFile').value = '';
-  showToast('?묒떇 珥덇린???꾨즺', 'info');
+  showToast('양식 초기화 완료', 'info');
 }
 
-// ??? ADMIN ????????????????????????????????????????????????
+// ─── ADMIN ────────────────────────────────────────────────
 function switchAdminTab(tab, btn) {
   document.getElementById('adminInvoicesTab').style.display = tab === 'invoices' ? 'block' : 'none';
   document.getElementById('adminUsersTab').style.display = tab === 'users' ? 'block' : 'none';
@@ -2185,17 +2025,17 @@ async function loadAdminData() {
     document.getElementById('statHospitals').textContent = hospitals;
     document.getElementById('statInvoices').textContent = all.length;
     document.getElementById('statMonthly').textContent = monthly;
-    document.getElementById('statAmount').textContent = Math.round(totalAmt / 10000) + '留?;
+    document.getElementById('statAmount').textContent = Math.round(totalAmt / 10000) + '만';
 
     document.getElementById('adminListBody').innerHTML = all.map(inv =>
       '<tr>' +
-      '<td style="font-weight:500">' + (inv.hospitalName || '??) + '</td>' +
-      '<td>' + (inv.date || '??) + '</td>' +
-      '<td>' + (inv.vendor || '??) + '</td>' +
-      '<td>' + (inv.type || '??) + '</td>' +
-      '<td>' + (inv.items?.length || 0) + '媛?/td>' +
-      '<td style="font-family:JetBrains Mono,monospace;color:var(--accent)">' + (inv.totalAmount ? inv.totalAmount + '?? : '??) + '</td>' +
-      '<td>' + (inv.imageUrl ? '<button class="btn-sm" onclick="viewImage(\'' + inv.imageUrl + '\')">?먮낯</button>' : '??) + '</td>' +
+      '<td style="font-weight:500">' + (inv.hospitalName || '—') + '</td>' +
+      '<td>' + (inv.date || '—') + '</td>' +
+      '<td>' + (inv.vendor || '—') + '</td>' +
+      '<td>' + (inv.type || '—') + '</td>' +
+      '<td>' + (inv.items?.length || 0) + '개</td>' +
+      '<td style="font-family:JetBrains Mono,monospace;color:var(--accent)">' + (inv.totalAmount ? inv.totalAmount + '원' : '—') + '</td>' +
+      '<td>' + (inv.imageUrl ? '<button class="btn-sm" onclick="viewImage(\'' + inv.imageUrl + '\')">원본</button>' : '—') + '</td>' +
       '</tr>'
     ).join('');
   } catch(e) { console.error(e); }
@@ -2204,15 +2044,15 @@ async function loadAdminData() {
 async function loadAdminUsers() {
   const fb = window._firebase;
   try {
-    // ?ъ슜??紐⑸줉
+    // 사용자 목록
     const usersSnap = await fb.getDocs(fb.collection(fb.db, 'users'));
     const users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    // 紐낆꽭???꾩껜 (?ъ슜?먮퀎 ?듦퀎??
+    // 명세서 전체 (사용자별 통계용)
     const invSnap = await fb.getDocs(fb.collection(fb.db, 'invoices'));
     const allInvoices = invSnap.docs.map(d => d.data());
 
-    // ?ъ슜?먮퀎 ?듦퀎 吏묎퀎
+    // 사용자별 통계 집계
     const userStats = {};
     allInvoices.forEach(inv => {
       const uid = inv.hospitalId;
@@ -2223,20 +2063,20 @@ async function loadAdminUsers() {
 
     document.getElementById('adminUsersBody').innerHTML = users.map(u => {
       const stats = userStats[u.id] || { count: 0, vendors: new Set() };
-      const vendors = [...(stats.vendors || [])].slice(0, 3).join(', ') || '??;
-      const createdAt = u.createdAt?.toDate ? u.createdAt.toDate().toISOString().slice(0,10) : '??;
+      const vendors = [...(stats.vendors || [])].slice(0, 3).join(', ') || '—';
+      const createdAt = u.createdAt?.toDate ? u.createdAt.toDate().toISOString().slice(0,10) : '—';
       return '<tr>' +
-        '<td style="font-weight:500">' + (u.hospitalName || '??) + '</td>' +
-        '<td>' + (u.name || '??) + '</td>' +
-        '<td style="font-size:11px">' + (u.email || '??) + '</td>' +
+        '<td style="font-weight:500">' + (u.hospitalName || '—') + '</td>' +
+        '<td>' + (u.name || '—') + '</td>' +
+        '<td style="font-size:11px">' + (u.email || '—') + '</td>' +
         '<td>' + createdAt + '</td>' +
-        '<td>' + stats.count + '嫄?/td>' +
+        '<td>' + stats.count + '건</td>' +
         '<td style="font-size:11px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + vendors + '</td>' +
         '</tr>';
     }).join('');
 
     if (!users.length) {
-      document.getElementById('adminUsersBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)">?깅줉???ъ슜?먭? ?놁뒿?덈떎</td></tr>';
+      document.getElementById('adminUsersBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)">등록된 사용자가 없습니다</td></tr>';
     }
   } catch(e) { console.error(e); }
 }
@@ -2245,13 +2085,13 @@ function exportAdminExcel() {
   exportAllExcel();
 }
 
-// ??? 臾몄쓽 湲곕뒫 ???????????????????????????????????????????
+// ─── 문의 기능 ───────────────────────────────────────────
 async function submitInquiry() {
   if (!currentUser) return;
   const fb = await waitFirebase();
   const title = document.getElementById('inquiryTitle').value.trim();
   const content = document.getElementById('inquiryContent').value.trim();
-  if (!title || !content) { showToast('?쒕ぉ怨??댁슜???낅젰?섏꽭??, 'error'); return; }
+  if (!title || !content) { showToast('제목과 내용을 입력하세요', 'error'); return; }
 
   try {
     await fb.addDoc(fb.collection(fb.db, 'inquiries'), {
@@ -2266,9 +2106,9 @@ async function submitInquiry() {
     });
     document.getElementById('inquiryTitle').value = '';
     document.getElementById('inquiryContent').value = '';
-    showToast('臾몄쓽媛 ?깅줉?섏뿀?듬땲??, 'success');
+    showToast('문의가 등록되었습니다', 'success');
     loadMyInquiries();
-  } catch(e) { showToast('臾몄쓽 ?깅줉 ?ㅽ뙣: ' + e.message, 'error'); }
+  } catch(e) { showToast('문의 등록 실패: ' + e.message, 'error'); }
 }
 
 async function loadMyInquiries() {
@@ -2282,17 +2122,17 @@ async function loadMyInquiries() {
 
     const container = document.getElementById('inquiryList');
     if (!list.length) {
-      container.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px">臾몄쓽 ?댁뿭???놁뒿?덈떎</div>';
+      container.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px">문의 내역이 없습니다</div>';
       return;
     }
     container.innerHTML = list.map(inq => {
       const date = inq.createdAt?.toDate ? inq.createdAt.toDate().toLocaleString('ko-KR') : '';
-      const statusLabel = inq.status === 'replied' ? '<span style="color:var(--success)">?듬??꾨즺</span>' : '<span style="color:var(--warn)">?湲곗쨷</span>';
+      const statusLabel = inq.status === 'replied' ? '<span style="color:var(--success)">답변완료</span>' : '<span style="color:var(--warn)">대기중</span>';
       return '<div style="border-bottom:1px solid var(--border);padding:14px 0">' +
         '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong style="font-size:13px">' + inq.title + '</strong>' + statusLabel + '</div>' +
         '<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">' + date + '</div>' +
         '<div style="font-size:13px;white-space:pre-wrap">' + inq.content + '</div>' +
-        (inq.reply ? '<div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px;font-size:12px"><strong style="color:var(--accent)">愿由ъ옄 ?듬?:</strong><br>' + inq.reply + '</div>' : '') +
+        (inq.reply ? '<div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px;font-size:12px"><strong style="color:var(--accent)">관리자 답변:</strong><br>' + inq.reply + '</div>' : '') +
         '</div>';
     }).join('');
   } catch(e) { console.error(e); }
@@ -2307,19 +2147,19 @@ async function loadAdminInquiries() {
 
     const container = document.getElementById('adminInquiryList');
     if (!list.length) {
-      container.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:40px">臾몄쓽 ?댁뿭???놁뒿?덈떎</div>';
+      container.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:40px">문의 내역이 없습니다</div>';
       return;
     }
     container.innerHTML = list.map(inq => {
       const date = inq.createdAt?.toDate ? inq.createdAt.toDate().toLocaleString('ko-KR') : '';
-      const statusLabel = inq.status === 'replied' ? '<span style="color:var(--success)">?듬??꾨즺</span>' : '<span style="color:var(--warn);font-weight:600">?湲곗쨷</span>';
+      const statusLabel = inq.status === 'replied' ? '<span style="color:var(--success)">답변완료</span>' : '<span style="color:var(--warn);font-weight:600">대기중</span>';
       return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">' +
         '<div style="display:flex;justify-content:space-between;margin-bottom:8px"><strong style="font-size:14px">' + inq.title + '</strong>' + statusLabel + '</div>' +
-        '<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">' + (inq.hospitalName || '') + ' 쨌 ' + (inq.userName || '') + ' 쨌 ' + (inq.email || '') + ' 쨌 ' + date + '</div>' +
+        '<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">' + (inq.hospitalName || '') + ' · ' + (inq.userName || '') + ' · ' + (inq.email || '') + ' · ' + date + '</div>' +
         '<div style="font-size:13px;white-space:pre-wrap;margin-bottom:12px">' + inq.content + '</div>' +
-        (inq.reply ? '<div style="padding:10px;background:var(--surface2);border-radius:8px;font-size:12px;margin-bottom:10px"><strong style="color:var(--accent)">?듬?:</strong> ' + inq.reply + '</div>' : '') +
-        '<div style="display:flex;gap:8px"><textarea id="reply-' + inq.id + '" placeholder="?듬? ?낅젰..." rows="2" style="flex:1;padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;font-size:12px;outline:none;resize:none">' + (inq.reply || '') + '</textarea>' +
-        '<button class="btn-primary" onclick="replyInquiry(\'' + inq.id + '\')" style="flex:none;width:auto;padding:8px 16px;font-size:12px">?듬?</button></div>' +
+        (inq.reply ? '<div style="padding:10px;background:var(--surface2);border-radius:8px;font-size:12px;margin-bottom:10px"><strong style="color:var(--accent)">답변:</strong> ' + inq.reply + '</div>' : '') +
+        '<div style="display:flex;gap:8px"><textarea id="reply-' + inq.id + '" placeholder="답변 입력..." rows="2" style="flex:1;padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;font-size:12px;outline:none;resize:none">' + (inq.reply || '') + '</textarea>' +
+        '<button class="btn-primary" onclick="replyInquiry(\'' + inq.id + '\')" style="flex:none;width:auto;padding:8px 16px;font-size:12px">답변</button></div>' +
         '</div>';
     }).join('');
   } catch(e) { console.error(e); }
@@ -2328,15 +2168,15 @@ async function loadAdminInquiries() {
 async function replyInquiry(id) {
   const fb = window._firebase;
   const reply = document.getElementById('reply-' + id).value.trim();
-  if (!reply) { showToast('?듬????낅젰?섏꽭??, 'error'); return; }
+  if (!reply) { showToast('답변을 입력하세요', 'error'); return; }
   try {
     await fb.setDoc(fb.doc(fb.db, 'inquiries', id), { reply, status: 'replied' }, { merge: true });
-    showToast('?듬? ?꾨즺', 'success');
+    showToast('답변 완료', 'success');
     loadAdminInquiries();
-  } catch(e) { showToast('?듬? ?ㅽ뙣: ' + e.message, 'error'); }
+  } catch(e) { showToast('답변 실패: ' + e.message, 'error'); }
 }
 
-// ??? ?좏깮/??젣/?섏젙/異쒕젰 ?????????????????????????????????
+// ─── 선택/삭제/수정/출력 ─────────────────────────────────
 function toggleSelectAll(el) {
   document.querySelectorAll('.inv-check').forEach(cb => cb.checked = el.checked);
   updateSelectionUI();
@@ -2355,29 +2195,30 @@ function getSelectedIds() {
 async function deleteSelectedInvoices() {
   const ids = getSelectedIds();
   if (!ids.length) return;
-  if (!confirm(ids.length + '嫄댁쓽 紐낆꽭?쒕? ??젣?섏떆寃좎뒿?덇퉴?')) return;
+  if (!confirm(ids.length + '건의 명세서를 삭제하시겠습니까?')) return;
   const fb = window._firebase;
   try {
     await Promise.all(ids.map(id => fb.deleteDoc(fb.doc(fb.db, 'invoices', id))));
-    showToast(ids.length + '嫄???젣 ?꾨즺', 'success');
+    showToast(ids.length + '건 삭제 완료', 'success');
     loadInvoices();
-  } catch(e) { showToast('??젣 ?ㅽ뙣: ' + e.message, 'error'); }
+  } catch(e) { showToast('삭제 실패: ' + e.message, 'error'); }
 }
 
 async function deleteSingleInvoice(id) {
-  if (!confirm('??紐낆꽭?쒕? ??젣?섏떆寃좎뒿?덇퉴?')) return;
+  if (!confirm('이 명세서를 삭제하시겠습니까?')) return;
   const fb = window._firebase;
   try {
     await fb.deleteDoc(fb.doc(fb.db, 'invoices', id));
-    showToast('??젣 ?꾨즺', 'success');
+    showToast('삭제 완료', 'success');
     loadInvoices();
-  } catch(e) { showToast('??젣 ?ㅽ뙣: ' + e.message, 'error'); }
+  } catch(e) { showToast('삭제 실패: ' + e.message, 'error'); }
 }
 
 function editInvoice(id) {
   const inv = invoices.find(i => i.id === id);
   if (!inv) return;
-  // ?ㅼ틪 ?⑤꼸濡??대룞 ???쇱뿉 ?곗씠??梨꾩슦湲?  showPanel('scan', document.querySelector('.nav-btn'));
+  // 스캔 패널로 이동 후 폼에 데이터 채우기
+  showPanel('scan', document.querySelector('.nav-btn'));
   document.getElementById('formEmpty').style.display = 'none';
   document.getElementById('formContent').style.display = 'block';
   document.getElementById('bottomBar').style.display = 'flex';
@@ -2387,7 +2228,7 @@ function editInvoice(id) {
   s('f-bizno', inv.bizNo); s('f-contact', inv.contact); s('f-type', inv.type);
   s('f-payment', inv.payment); s('f-dept', inv.dept); s('f-receiver', inv.receiver);
   s('f-supply', inv.supplyAmount); s('f-vat', inv.vat); s('f-total', inv.totalAmount);
-  if (inv.totalAmount) document.getElementById('totalDisplay').textContent = inv.totalAmount + '??;
+  if (inv.totalAmount) document.getElementById('totalDisplay').textContent = inv.totalAmount + '원';
 
   document.getElementById('itemsBody').innerHTML = '';
   if (inv.items && inv.items.length) inv.items.forEach(item => addItemRow(item));
@@ -2398,9 +2239,10 @@ function editInvoice(id) {
     document.getElementById('previewImg').style.display = 'block';
   }
 
-  // ?섏젙 紐⑤뱶 ?쒖떆: ???踰꾪듉???낅뜲?댄듃濡?蹂寃?  window._editingInvoiceId = id;
+  // 수정 모드 표시: 저장 버튼을 업데이트로 변경
+  window._editingInvoiceId = id;
   const saveBtn = document.querySelector('#bottomBar .btn-primary');
-  if (saveBtn) { saveBtn.textContent = '?뮶 ?섏젙 ???; saveBtn.onclick = () => updateInvoice(id); }
+  if (saveBtn) { saveBtn.textContent = '💾 수정 저장'; saveBtn.onclick = () => updateInvoice(id); }
 }
 
 async function updateInvoice(id) {
@@ -2434,17 +2276,17 @@ async function updateInvoice(id) {
       items
     }, { merge: true });
 
-    showToast('?섏젙 ?꾨즺', 'success');
+    showToast('수정 완료', 'success');
     window._editingInvoiceId = null;
     const saveBtn = document.querySelector('#bottomBar .btn-primary');
-    if (saveBtn) { saveBtn.textContent = '?뮶 ???; saveBtn.onclick = saveInvoice; }
+    if (saveBtn) { saveBtn.textContent = '💾 저장'; saveBtn.onclick = saveInvoice; }
     clearScan();
-  } catch(e) { showToast('?섏젙 ?ㅽ뙣: ' + e.message, 'error'); }
+  } catch(e) { showToast('수정 실패: ' + e.message, 'error'); }
 }
 
 function printSelectedInvoices() {
   const ids = getSelectedIds();
-  if (!ids.length) { showToast('異쒕젰??紐낆꽭?쒕? ?좏깮?섏꽭??, 'error'); return; }
+  if (!ids.length) { showToast('출력할 명세서를 선택하세요', 'error'); return; }
   const selected = invoices.filter(inv => ids.includes(inv.id));
 
   const printHtml = selected.map(inv => {
@@ -2452,17 +2294,17 @@ function printSelectedInvoices() {
       '<tr><td>' + (i+1) + '</td><td>' + (item.code||'') + '</td><td>' + (item.name||'') + '</td><td>' + (item.spec||'') + '</td><td>' + (item.unit||'') + '</td><td>' + (item.qty||'') + '</td><td>' + (item.unitPrice||'') + '</td><td>' + (item.unitPriceVat||'') + '</td><td>' + (item.amount||'') + '</td><td>' + (item.manufacturer||'') + '</td></tr>'
     ).join('');
     return '<div class="print-page">' +
-      '<h2>嫄곕옒紐낆꽭??/h2>' +
-      '<table><tr><td><b>嫄곕옒?쇱옄:</b> ' + (inv.date||'') + '</td><td><b>紐낆꽭?쒕쾲??</b> ' + (inv.docNo||'') + '</td></tr>' +
-      '<tr><td><b>怨듦툒?낆껜:</b> ' + (inv.vendor||'') + '</td><td><b>?ъ뾽?먮쾲??</b> ' + (inv.bizNo||'') + '</td></tr>' +
-      '<tr><td><b>?대떦??</b> ' + (inv.contact||'') + '</td><td><b>援щ텇:</b> ' + (inv.type||'') + '</td></tr></table>' +
-      '<table class="items"><thead><tr><th>#</th><th>蹂댄뿕肄붾뱶</th><th>?덈챸</th><th>洹쒓꺽</th><th>?⑥쐞</th><th>?섎웾</th><th>?④?</th><th>?④?(VAT)</th><th>湲덉븸</th><th>?쒖“??/th></tr></thead><tbody>' + itemRows + '</tbody></table>' +
-      '<div class="totals"><b>怨듦툒媛??</b> ' + (inv.supplyAmount||'0') + '  <b>?몄븸:</b> ' + (inv.vat||'0') + '  <b>?⑷퀎:</b> ' + (inv.totalAmount||'0') + '??/div>' +
+      '<h2>거래명세서</h2>' +
+      '<table><tr><td><b>거래일자:</b> ' + (inv.date||'') + '</td><td><b>명세서번호:</b> ' + (inv.docNo||'') + '</td></tr>' +
+      '<tr><td><b>공급업체:</b> ' + (inv.vendor||'') + '</td><td><b>사업자번호:</b> ' + (inv.bizNo||'') + '</td></tr>' +
+      '<tr><td><b>담당자:</b> ' + (inv.contact||'') + '</td><td><b>구분:</b> ' + (inv.type||'') + '</td></tr></table>' +
+      '<table class="items"><thead><tr><th>#</th><th>보험코드</th><th>품명</th><th>규격</th><th>단위</th><th>수량</th><th>단가</th><th>단가(VAT)</th><th>금액</th><th>제조사</th></tr></thead><tbody>' + itemRows + '</tbody></table>' +
+      '<div class="totals"><b>공급가액:</b> ' + (inv.supplyAmount||'0') + '  <b>세액:</b> ' + (inv.vat||'0') + '  <b>합계:</b> ' + (inv.totalAmount||'0') + '원</div>' +
       '</div>';
   }).join('<div style="page-break-after:always"></div>');
 
   const win = window.open('', '_blank');
-  win.document.write('<!DOCTYPE html><html><head><title>紐낆꽭??異쒕젰</title><style>' +
+  win.document.write('<!DOCTYPE html><html><head><title>명세서 출력</title><style>' +
     'body{font-family:sans-serif;padding:20px;color:#333}' +
     'h2{margin-bottom:12px;font-size:18px}' +
     'table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12px}' +
@@ -2476,7 +2318,7 @@ function printSelectedInvoices() {
   win.print();
 }
 
-// ??? UTILS ????????????????????????????????????????????????
+// ─── UTILS ────────────────────────────────────────────────
 function viewImage(url) {
   document.getElementById('modalImg').src = url;
   document.getElementById('imageModal').classList.add('show');
@@ -2522,48 +2364,38 @@ function showToast(msg, type) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ??? API KEY ????????????????????????????????????????????????
+function createThumbnail(base64, mediaType) {
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() {
+      var w = img.width, h = img.height, maxSize = 300;
+      if (w > maxSize || h > maxSize) { var ratio = Math.min(maxSize / w, maxSize / h); w = Math.round(w * ratio); h = Math.round(h * ratio); }
+      var canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', 0.3));
+    };
+    img.onerror = function() { resolve(null); };
+    img.src = 'data:' + (mediaType || 'image/jpeg') + ';base64,' + base64;
+  });
+}
+
 function saveApiKey() {
-  const key = document.getElementById('settingsApiKey').value.trim();
-  if (key) {
-    localStorage.setItem('drscanpro_apikey', key);
-    showToast('API 키가 저장되었습니다', 'success');
-  } else {
-    localStorage.removeItem('drscanpro_apikey');
-    showToast('API 키가 제거되었습니다', 'info');
-  }
+  var key = document.getElementById('settingsApiKey').value.trim();
+  if (key) { localStorage.setItem('drscanpro_apikey', key); showToast('API 키가 저장되었습니다', 'success'); }
+  else { localStorage.removeItem('drscanpro_apikey'); showToast('API 키가 제거되었습니다', 'info'); }
 }
 
 async function testApiKey() {
-  const key = document.getElementById('settingsApiKey').value.trim();
-  const statusEl = document.getElementById('apiKeyStatus');
+  var key = document.getElementById('settingsApiKey').value.trim();
+  var statusEl = document.getElementById('apiKeyStatus');
   if (!key) { showToast('API 키를 입력하세요', 'error'); return; }
-
-  statusEl.textContent = '테스트 중...';
-  statusEl.style.color = 'var(--accent2)';
-
+  statusEl.textContent = '테스트 중...'; statusEl.style.color = 'var(--accent2)';
   try {
-    const res = await fetch('/api/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apiKey: key, testOnly: true })
-    });
-    if (res.ok) {
-      statusEl.textContent = '✓ 연동 성공! API 키가 유효합니다.';
-      statusEl.style.color = 'var(--success)';
-      localStorage.setItem('drscanpro_apikey', key);
-    } else {
-      const err = await res.json().catch(() => ({}));
-      statusEl.textContent = '✗ 연동 실패: ' + (err.error || 'API 키가 유효하지 않습니다');
-      statusEl.style.color = '#f87171';
-    }
-  } catch(e) {
-    statusEl.textContent = '✗ 연동 실패: ' + e.message;
-    statusEl.style.color = '#f87171';
-  }
+    var res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ apiKey: key, testOnly: true }) });
+    if (res.ok) { statusEl.textContent = '연동 성공! API 키가 유효합니다.'; statusEl.style.color = 'var(--success)'; localStorage.setItem('drscanpro_apikey', key); }
+    else { var err = await res.json().catch(function() { return {}; }); statusEl.textContent = '연동 실패: ' + (err.error || 'API 키가 유효하지 않습니다'); statusEl.style.color = '#f87171'; }
+  } catch(e) { statusEl.textContent = '연동 실패: ' + e.message; statusEl.style.color = '#f87171'; }
 }
 </script>
 </body>
 </html>
-
-
