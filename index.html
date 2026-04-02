@@ -649,6 +649,9 @@ td input:focus { border-bottom-color: var(--accent); }
               <button class="btn-primary" id="analyzeBtn" disabled onclick="analyze()">
                 🔍 AI 분석
               </button>
+              <button class="btn-primary" id="batchBtn" style="display:none;background:var(--accent2)" onclick="batchAnalyze()">
+                ⚡ 전체 분석 + 저장
+              </button>
               <button class="btn-secondary" onclick="clearScan()">초기화</button>
             </div>
 
@@ -1465,6 +1468,7 @@ function updateImageUI() {
   preview.src = currentImages[currentImages.length - 1].dataUrl;
   preview.style.display = 'block';
   document.getElementById('analyzeBtn').disabled = false;
+  document.getElementById('batchBtn').style.display = currentImages.length > 1 ? '' : 'none';
   if (currentImages.length > 1) {
     listEl.style.display = 'block';
     strip.innerHTML = currentImages.map(function(img, i) {
@@ -2362,6 +2366,70 @@ function showToast(msg, type) {
   t.textContent = msg;
   t.className = 'toast show ' + (type || 'info');
   setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function batchAnalyze() {
+  if (currentImages.length < 2) { analyze(); return; }
+  if (!currentUser) return;
+  var fb = await waitFirebase();
+  var total = currentImages.length;
+  var success = 0, fail = 0;
+
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('batchBtn').disabled = true;
+
+  for (var i = 0; i < total; i++) {
+    setStatus('processing', '분석 중... (' + (i + 1) + '/' + total + ')');
+    try {
+      var res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: currentImages[i].base64, imageType: currentImages[i].type, apiKey: localStorage.getItem('drscanpro_apikey') || '' })
+      });
+      if (!res.ok) { fail++; continue; }
+      var data = await res.json();
+      var text = data.content[0].text;
+      var match = text.match(/\{[\s\S]*\}/);
+      if (!match) { fail++; continue; }
+      var d = JSON.parse(match[0]);
+
+      // 썸네일 생성
+      var thumb = await createThumbnail(currentImages[i].base64, currentImages[i].type);
+
+      // 품목 데이터 정리
+      var items = (d.items || []).map(function(item) {
+        return { code: item.code || '', name: item.name || '', spec: item.spec || '', unit: item.unit || '', qty: String(item.qty || ''), unitPrice: String(item.unitPrice || ''), unitPriceVat: String(item.unitPriceVat || ''), amount: String(item.amount || ''), manufacturer: item.manufacturer || '' };
+      });
+
+      // Firestore에 저장
+      await fb.addDoc(fb.collection(fb.db, 'invoices'), {
+        hospitalId: currentUser.uid,
+        hospitalName: currentUserData ? currentUserData.hospitalName : '',
+        date: d.date || '', docNo: d.docNo || '', vendor: d.vendor || '',
+        bizNo: d.bizNo || '', contact: d.contact || '', dept: '',
+        type: d.type || '', payment: d.paymentTerms || '', receiver: '',
+        supplyAmount: d.supplyAmount ? Number(d.supplyAmount).toLocaleString() : '',
+        vat: d.vat ? Number(d.vat).toLocaleString() : '',
+        totalAmount: d.totalAmount ? Number(d.totalAmount).toLocaleString() : '',
+        items: items, imageUrl: thumb, status: 'confirmed',
+        createdAt: fb.serverTimestamp()
+      });
+      success++;
+    } catch(e) { fail++; }
+  }
+
+  document.getElementById('analyzeBtn').disabled = false;
+  document.getElementById('batchBtn').disabled = false;
+
+  if (success > 0) {
+    setStatus('success', success + '건 분석 완료' + (fail > 0 ? ', ' + fail + '건 실패' : ''));
+    showToast(success + '건 저장 완료!', 'success');
+    clearScan();
+    showPanel('list', document.querySelectorAll('.nav-btn')[1]);
+  } else {
+    setStatus('error', '분석 실패');
+    showToast('분석에 실패했습니다', 'error');
+  }
 }
 
 function createThumbnail(base64, mediaType) {
